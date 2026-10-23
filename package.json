@@ -1,7 +1,7 @@
 {
   "name": "sari-sari-store",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Offline-first inventory app for a Philippine sari-sari store (PWA).",
   "type": "module",
   "scripts": {

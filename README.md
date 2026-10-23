@@ -27,8 +27,10 @@ Run these in a terminal inside this folder.
 | `src/screens/` | One file per screen (Dashboard, Products, Scanner, …) |
 | `src/components/` | Pieces shared by screens (top bar, bottom navigation, icons, …) |
 | `src/lib/` | App logic: screen addresses (`routes.ts`), navigation, offline support |
+| `src/lib/db/` | The on-phone database and the product repository (all saving goes through `products.ts`) |
+| `src/lib/model/`, `src/lib/util/` | Product fields, limits, peso/centavo conversion, validation rules, stock status |
 | `src/app.css` | Colors, sizes and shared styles |
 | `public/` | App icons |
 | `vite.config.ts` | Build settings, app name and offline settings |
 | `.github/workflows/deploy.yml` | Publishes the app to GitHub Pages |
-| `docs/` | Testing checklist and, later, the backup format and setup guide |
+| `docs/` | Testing checklist, data model and, later, the backup format and setup guide |

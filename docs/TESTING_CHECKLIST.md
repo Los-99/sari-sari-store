@@ -30,3 +30,25 @@ icon (Toggle device toolbar) and choose a phone such as "iPhone 12 Pro".
 - [ ] Settings shows **Opened from Home Screen: Yes**, and **Works offline: Yes** (close and reopen the app once if it says "Not yet").
 - [ ] Turn on **airplane mode**, fully close the app, and open it from the icon. It still opens and all tabs work.
 - [ ] The bottom bar isn't hidden behind the iPhone's home indicator or Android's navigation buttons.
+
+## Phase 3: Local database
+
+There's no product form yet (that's Phase 4), so these checks confirm the database
+opens and keeps data between visits.
+
+### On your phone (after Phase 3 is published)
+
+- [ ] Open the app from its Home Screen icon. If a bar says **"A new version of the app is ready"**, tap **Update**.
+- [ ] Settings → **App version** shows **0.2.0**.
+- [ ] Settings → **Database** shows **Ready** (green).
+- [ ] Home shows **0** for Active products, Low stock and Out of stock (not "…" and no red error box).
+- [ ] Note the number next to **Times opened since …**. Fully close the app (swipe it away), open it again,
+      and check that the number went **up by 1**. That proves saved data survives closing the app.
+- [ ] Do the same with **airplane mode on**. The number still goes up.
+- [ ] Note what **Protected from automatic clearing** shows (Yes / No / Not available) and tell me.
+      It doesn't stop the app from working; it tells us how carefully we need to back up on that phone.
+
+### Automatic checks (optional, on your PC)
+
+In a terminal in the project folder, run `npm test`. All checks should pass (green ✓).
+They cover peso/centavo conversion, validation rules, stock status and screen addresses.

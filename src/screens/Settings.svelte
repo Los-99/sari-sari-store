@@ -2,8 +2,25 @@
   import TopBar from '../components/TopBar.svelte';
   import ComingSoon from '../components/ComingSoon.svelte';
   import { pwa } from '../lib/pwa.svelte';
+  import { storage } from '../lib/db/storage.svelte';
 
   const version = __APP_VERSION__;
+
+  const databaseLabel = $derived(
+    storage.status === 'ready' ? 'Ready' : storage.status === 'error' ? 'Error' : 'Opening…',
+  );
+  const protectedLabel = $derived(
+    storage.persisted === true ? 'Yes' : storage.persisted === false ? 'No' : 'Not available',
+  );
+  const firstOpened = $derived(
+    storage.firstOpenedAt === null
+      ? ''
+      : new Date(storage.firstOpenedAt).toLocaleDateString('en-PH', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+  );
 
   // True when the app was opened from its Home Screen icon (not a browser tab).
   const openedFromHomeScreen =
@@ -40,10 +57,27 @@
       <dd class:yes={offlineCopyActive}>{offlineCopyActive ? 'Yes' : 'Not yet'}</dd>
     </div>
     <div>
+      <dt>Database</dt>
+      <dd class:yes={storage.status === 'ready'} class:bad={storage.status === 'error'}>{databaseLabel}</dd>
+    </div>
+    <div>
+      <dt>Protected from automatic clearing</dt>
+      <dd class:yes={storage.persisted === true}>{protectedLabel}</dd>
+    </div>
+    {#if storage.status === 'ready'}
+      <div>
+        <dt>Times opened since {firstOpened}</dt>
+        <dd>{storage.openCount}</dd>
+      </div>
+    {/if}
+    <div>
       <dt>App version</dt>
       <dd>{version}</dd>
     </div>
   </dl>
+  {#if storage.status === 'error'}
+    <p class="error-text" role="alert">{storage.errorMessage}</p>
+  {/if}
   {#if !openedFromHomeScreen}
     <p class="muted hint">
       Tip: add this app to your Home Screen and always open it from there. On iPhone, a Safari tab and the
@@ -80,6 +114,15 @@
 
   dd.yes {
     color: var(--color-ok-text);
+  }
+
+  dd.bad,
+  .error-text {
+    color: var(--color-danger);
+  }
+
+  .error-text {
+    margin: 0;
   }
 
   .hint {
