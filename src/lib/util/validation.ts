@@ -45,11 +45,8 @@ export function validateProduct(fields: ProductFields): ValidationResult {
   else if (name.length > LIMITS.nameMaxLength) errors.name = `Name can be at most ${LIMITS.nameMaxLength} characters.`;
 
   const barcode = normalizeBarcode(fields.barcode);
-  if (barcode !== undefined) {
-    if (/\s/.test(barcode)) errors.barcode = "Barcode can't contain spaces.";
-    else if (!/^[\x21-\x7E]+$/.test(barcode)) errors.barcode = 'Barcode can only use letters, numbers and symbols.';
-    else if (barcode.length > LIMITS.barcodeMaxLength) errors.barcode = `Barcode can be at most ${LIMITS.barcodeMaxLength} characters.`;
-  }
+  const barcodeError = barcode === undefined ? null : barcodeProblem(barcode);
+  if (barcodeError) errors.barcode = barcodeError;
 
   const category = normalizeText(fields.category ?? '') || FALLBACK_CATEGORY;
   if (category.length > LIMITS.categoryMaxLength) {
@@ -87,6 +84,14 @@ export function validateProduct(fields: ProductFields): ValidationResult {
   // database's "unique barcode" rule ignores this product.
   if (barcode !== undefined) value.barcode = barcode;
   return { ok: true, value };
+}
+
+/** Explains what's wrong with a (trimmed, non-empty) barcode, or null if it's fine. */
+export function barcodeProblem(barcode: string): string | null {
+  if (/\s/.test(barcode)) return "Barcode can't contain spaces.";
+  if (!/^[\x21-\x7E]+$/.test(barcode)) return 'Barcode can only use letters, numbers and symbols.';
+  if (barcode.length > LIMITS.barcodeMaxLength) return `Barcode can be at most ${LIMITS.barcodeMaxLength} characters.`;
+  return null;
 }
 
 /** Things that are allowed but worth a second look before saving. */

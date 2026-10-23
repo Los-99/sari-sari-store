@@ -162,3 +162,60 @@ You need a few products first, ideally including:
 ### Automatic checks (on your PC)
 
 Run `npm test`. The new search/filter checks are in `src/lib/util/product-filter.test.ts`.
+
+## Phase 6: Barcode scanner
+
+Settings should show **App version 0.5.0**. You need real products with barcodes (from the store shelf).
+Do the first test **with internet on**, then the rest in **airplane mode**.
+
+### First use and permission
+
+- [ ] Tap **Scan** (middle of the bottom bar). The phone asks for **camera** permission. Tap **Allow**.
+      The camera view appears with a white box and the text **"Point at a barcode"**.
+- [ ] Turn on **airplane mode**, fully close the app, reopen it and tap **Scan**. The camera and scanning still work.
+- [ ] *(Permission denied)* On another try, tap **Don't Allow**. A message **"Camera access is off"** explains how
+      to turn it back on, with **Try again**. **Enter barcode manually** still works. Then turn the permission back on.
+
+### Scanning
+
+- [ ] Hold a product's barcode **inside the white box**, about 10–20 cm away. Within a second or two:
+      a beep (and a vibration on Android), the box turns **yellow**, and the text says **"Paused"**.
+- [ ] **Unknown barcode:** shows **"Not in your products yet"** with the digits. **Register new product** opens Add Product
+      with the barcode **already filled in** and the name and prices **empty**.
+- [ ] Save that product, go back to **Scan** and scan it again. Now it shows the **name, price and stock** with
+      **View**, **Set stock** and **Scan next**.
+- [ ] **Set stock** changes the stock, and the card updates.
+- [ ] **No repeats:** while the card is showing, keep the barcode in view. Nothing else happens (no extra beeps).
+- [ ] **Scan next**, then quickly point at a **different** product. It reads the new one.
+- [ ] Scan a **deactivated** product. It says **"This product is deactivated"**, with **Reactivate**.
+- [ ] A barcode starting with **0** keeps the 0 in the digits shown.
+- [ ] Point at something **without** a barcode for about 8 seconds. A hint appears: *"Can't read it? Hold 10–20 cm away…"*.
+
+### Flashlight
+
+- [ ] *(Android)* A round **⚡ flashlight** button appears top-right. It turns the light on and off.
+- [ ] *(iPhone)* The button usually **doesn't appear**, because iPhone doesn't let web apps control the flashlight.
+      That's expected. Use room light, or the iPhone's own Control Center flashlight.
+
+### Manual entry
+
+- [ ] **Enter barcode manually** → type a barcode → **Look up**. It behaves like a scan.
+- [ ] Try a barcode with a space, or leave it empty. You get a clear error message.
+
+### Scan buttons elsewhere
+
+- [ ] **Add/Edit Product** → the **scan button** next to Barcode opens the camera. Scanning fills the field
+      and shows "Barcode … scanned".
+- [ ] In that form, scan a barcode that **another product already has**. You're warned right away
+      (red message + **Open "…"** button) before saving.
+- [ ] **Products** → the **scan button** in the search box. Scanning puts the barcode in the search and shows that product.
+- [ ] The **✕** at the top closes the camera without changing anything.
+
+### Camera is released
+
+- [ ] Leave the Scan tab (tap Home). The phone's "camera in use" indicator (green dot on iPhone) turns off.
+- [ ] Switch to another app while scanning, then come back. The camera restarts.
+
+### Automatic checks (on your PC)
+
+Run `npm test`. The new scan-confirmation checks are in `src/lib/scanner/scan-confirmer.test.ts`.

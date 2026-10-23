@@ -7,8 +7,11 @@
   import { goBack, linkTo, navigate, setLeaveGuard } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
+  import Icon from '../components/Icon.svelte';
+  import ScanOverlay from '../components/ScanOverlay.svelte';
   import {
     createProduct,
+    findProductByBarcode,
     findProductsWithSameName,
     getProduct,
     listCategories,
@@ -186,6 +189,25 @@
     }
   }
 
+  let scanning = $state(false);
+
+  /** A barcode read by the camera goes into the field, with an early duplicate check. */
+  async function useScannedBarcode(code: string) {
+    scanning = false;
+    values.barcode = code;
+    try {
+      const owner = await findProductByBarcode(code);
+      if (owner && owner.id !== productId) {
+        conflict = { barcode: code, owner };
+        showToast(`Already used by "${owner.name}".`, 'error');
+        return;
+      }
+    } catch {
+      // The check runs again when saving.
+    }
+    showToast(`Barcode ${code} scanned.`);
+  }
+
   function describedBy(key: keyof ProductFormValues, hasHint = false) {
     if (errors[key]) return `pf-${key}-error`;
     return hasHint ? `pf-${key}-hint` : undefined;
@@ -234,21 +256,26 @@
         <Field
           id="pf-barcode"
           label="Barcode"
-          hint="Optional. Leave empty for products without a barcode. Scanning comes in Phase 6."
+          hint="Optional. Tap the scan button, type it, or leave empty for products without a barcode."
           error={errors.barcode}
         >
-          <input
-            id="pf-barcode"
-            type="text"
-            class="barcode"
-            bind:value={values.barcode}
-            maxlength={LIMITS.barcodeMaxLength}
-            autocapitalize="off"
-            autocomplete="off"
-            spellcheck="false"
-            aria-invalid={Boolean(errors.barcode)}
-            aria-describedby={describedBy('barcode', true)}
-          />
+          <div class="with-button">
+            <input
+              id="pf-barcode"
+              type="text"
+              class="barcode"
+              bind:value={values.barcode}
+              maxlength={LIMITS.barcodeMaxLength}
+              autocapitalize="off"
+              autocomplete="off"
+              spellcheck="false"
+              aria-invalid={Boolean(errors.barcode)}
+              aria-describedby={describedBy('barcode', true)}
+            />
+            <button type="button" class="btn btn-secondary scan-button" aria-label="Scan barcode" onclick={() => (scanning = true)}>
+              <Icon name="scan" />
+            </button>
+          </div>
         </Field>
         {#if errors.barcode && conflict?.owner && conflict.barcode === normalizeBarcode(values.barcode)}
           <a
@@ -381,6 +408,10 @@
   {/if}
 </div>
 
+{#if scanning}
+  <ScanOverlay title="Scan product barcode" onResult={useScannedBarcode} onClose={() => (scanning = false)} />
+{/if}
+
 <style>
   form {
     display: flex;
@@ -413,6 +444,22 @@
   .barcode {
     font-family: ui-monospace, 'SF Mono', Consolas, monospace;
     letter-spacing: 0.04em;
+  }
+
+  .with-button {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .with-button input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .scan-button {
+    flex: none;
+    width: 56px;
+    padding: 0;
   }
 
   .two-columns {

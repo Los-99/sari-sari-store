@@ -3,6 +3,7 @@
   import TopBar from '../components/TopBar.svelte';
   import Icon from '../components/Icon.svelte';
   import ProductRow from '../components/ProductRow.svelte';
+  import ScanOverlay from '../components/ScanOverlay.svelte';
   import { linkTo, replaceAddress, savedScrollPosition } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
@@ -28,6 +29,7 @@
   let query = $state<ProductQuery>(untrack(() => ({ ...initialQuery })));
   let products = $state<Product[] | null>(null);
   let loadError = $state('');
+  let scanning = $state(false);
 
   async function load() {
     try {
@@ -117,6 +119,9 @@
             <Icon name="close" size={20} />
           </button>
         {/if}
+        <button type="button" class="search-scan" aria-label="Scan a barcode to search" onclick={() => (scanning = true)}>
+          <Icon name="scan" />
+        </button>
       </div>
 
       <div class="selects">
@@ -188,6 +193,17 @@
   <div class="fab-space" aria-hidden="true"></div>
 </div>
 
+{#if scanning}
+  <ScanOverlay
+    title="Scan to search"
+    onResult={(code) => {
+      scanning = false;
+      query.text = code;
+    }}
+    onClose={() => (scanning = false)}
+  />
+{/if}
+
 <a class="fab" href={`#${paths.productNew()}`} onclick={linkTo(paths.productNew())} aria-label="Add product">
   <Icon name="plus" size={28} />
 </a>
@@ -240,7 +256,7 @@
   .search input {
     width: 100%;
     min-height: 52px;
-    padding: 0 var(--touch-target) 0 44px;
+    padding: 0 calc(2 * var(--touch-target)) 0 44px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
@@ -269,9 +285,25 @@
     display: grid;
   }
 
-  .clear {
+  .search-scan {
     position: absolute;
     right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--touch-target);
+    height: var(--touch-target);
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .clear {
+    position: absolute;
+    right: calc(var(--touch-target) + 2px);
     top: 50%;
     transform: translateY(-50%);
     width: var(--touch-target);

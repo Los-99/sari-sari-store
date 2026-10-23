@@ -14,6 +14,8 @@
     refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>',
     check: '<path d="m5 12 5 5 9-10"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    flash: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   } as const;
 
   export type IconName = keyof typeof icons;
