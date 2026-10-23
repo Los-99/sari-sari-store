@@ -47,11 +47,11 @@
       <span class="value">{summary?.active ?? '…'}</span>
       <span class="label">Active products</span>
     </a>
-    <a class="card stat low" href={`#${paths.inventory}`} onclick={linkTo(paths.inventory)}>
+    <a class="card stat low" href={`#${paths.inventoryView('low')}`} onclick={linkTo(paths.inventoryView('low'))}>
       <span class="value">{summary?.low ?? '…'}</span>
       <span class="label"><Icon name="alert" size={16} /> Low stock</span>
     </a>
-    <a class="card stat out" href={`#${paths.inventory}`} onclick={linkTo(paths.inventory)}>
+    <a class="card stat out" href={`#${paths.inventoryView('out')}`} onclick={linkTo(paths.inventoryView('out'))}>
       <span class="value">{summary?.out ?? '…'}</span>
       <span class="label"><Icon name="out" size={16} /> Out of stock</span>
     </a>

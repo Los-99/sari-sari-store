@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseRoute, paths, tabFor } from './routes';
+import { DEFAULT_QUERY } from './util/product-filter';
 
 describe('parseRoute', () => {
   it('opens the dashboard for an empty address', () => {
@@ -9,10 +10,22 @@ describe('parseRoute', () => {
   });
 
   it('recognises the main tabs', () => {
-    expect(parseRoute('#/products')).toEqual({ name: 'products' });
+    expect(parseRoute('#/products')).toEqual({ name: 'products', query: DEFAULT_QUERY });
     expect(parseRoute('#/scan')).toEqual({ name: 'scan' });
-    expect(parseRoute('#/inventory')).toEqual({ name: 'inventory' });
+    expect(parseRoute('#/inventory')).toEqual({ name: 'inventory', view: 'low' });
     expect(parseRoute('#/settings')).toEqual({ name: 'settings' });
+  });
+
+  it('keeps the product search and filters', () => {
+    const query = { ...DEFAULT_QUERY, text: 'coke', stock: 'low' as const };
+    expect(parseRoute(`#${paths.productsMatching(query)}`)).toEqual({ name: 'products', query });
+    expect(paths.productsMatching(DEFAULT_QUERY)).toBe('/products');
+  });
+
+  it('reads the inventory list to show', () => {
+    expect(parseRoute(`#${paths.inventoryView('out')}`)).toEqual({ name: 'inventory', view: 'out' });
+    expect(parseRoute(`#${paths.inventoryView('all')}`)).toEqual({ name: 'inventory', view: 'all' });
+    expect(parseRoute('#/inventory?view=nonsense')).toEqual({ name: 'inventory', view: 'low' });
   });
 
   it('reads product ids', () => {

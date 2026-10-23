@@ -1,25 +1,46 @@
 <script lang="ts">
+  import { tick, untrack } from 'svelte';
   import TopBar from '../components/TopBar.svelte';
   import Icon from '../components/Icon.svelte';
   import ProductRow from '../components/ProductRow.svelte';
-  import ComingSoon from '../components/ComingSoon.svelte';
-  import { linkTo } from '../lib/router.svelte';
+  import { linkTo, replaceAddress, savedScrollPosition } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
   import { listProducts, productChanges } from '../lib/db/products';
   import { describeError } from '../lib/db/errors';
   import type { Product } from '../lib/model/product';
+  import {
+    DEFAULT_QUERY,
+    SORT_LABELS,
+    STOCK_FILTER_LABELS,
+    categoriesInUse,
+    filterProducts,
+    isFiltered,
+    type ProductQuery,
+    type SortOrder,
+    type StockFilter,
+  } from '../lib/util/product-filter';
 
+  let { initialQuery }: { initialQuery: ProductQuery } = $props();
+
+  // The search starts from the address (so Back and Home's links work),
+  // then lives here; every change is written back to the address.
+  let query = $state<ProductQuery>(untrack(() => ({ ...initialQuery })));
   let products = $state<Product[] | null>(null);
   let loadError = $state('');
-  let showInactive = $state(false);
 
   async function load() {
     try {
-      const all = await listProducts();
-      all.sort((a, b) => a.name.localeCompare(b.name, 'en-PH', { sensitivity: 'base' }));
-      products = all;
+      const first = products === null;
+      products = await listProducts();
       loadError = '';
+      if (first) {
+        const scrollY = savedScrollPosition();
+        if (scrollY) {
+          await tick();
+          window.scrollTo(0, scrollY);
+        }
+      }
     } catch (error) {
       loadError = describeError(error);
     }
@@ -33,9 +54,23 @@
     return () => productChanges.removeEventListener('change', refresh);
   });
 
+  $effect(() => {
+    replaceAddress(paths.productsMatching({ ...query }));
+  });
+
+  const results = $derived(products ? filterProducts(products, query) : []);
+  const categories = $derived.by(() => {
+    const used = products ? categoriesInUse(products) : [];
+    // Keep a category chosen earlier selectable even if no product uses it any more.
+    return query.category !== null && !used.includes(query.category) ? [query.category, ...used] : used;
+  });
   const inactiveCount = $derived(products?.filter((product) => !product.isActive).length ?? 0);
-  const shown = $derived(products?.filter((product) => showInactive || product.isActive) ?? []);
+  const filtered = $derived(isFiltered(query));
   const errorMessage = $derived(storage.status === 'error' ? storage.errorMessage : loadError);
+
+  function clearFilters() {
+    query = { ...DEFAULT_QUERY, sort: query.sort, showInactive: query.showInactive };
+  }
 </script>
 
 <TopBar title="Products" />
@@ -59,25 +94,95 @@
       </a>
     </div>
   {:else}
-    {#if inactiveCount > 0}
-      <label class="toggle">
-        <input type="checkbox" bind:checked={showInactive} />
-        Show deactivated products ({inactiveCount})
-      </label>
-    {/if}
+    <div class="tools" role="search">
+      <div class="search">
+        <span class="search-icon"><Icon name="search" size={20} /></span>
+        <label for="product-search" class="visually-hidden">Search by name or barcode</label>
+        <input
+          id="product-search"
+          type="search"
+          placeholder="Search name or barcode"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          enterkeyhint="search"
+          bind:value={query.text}
+          onkeydown={(event) => {
+            // Hide the keyboard so the results are visible.
+            if (event.key === 'Enter') (event.currentTarget as HTMLInputElement).blur();
+          }}
+        />
+        {#if query.text}
+          <button type="button" class="clear" aria-label="Clear search" onclick={() => (query.text = '')}>
+            <Icon name="close" size={20} />
+          </button>
+        {/if}
+      </div>
 
-    {#if shown.length === 0}
-      <p class="muted center">All your products are deactivated.</p>
+      <div class="selects">
+        <label>
+          <span class="visually-hidden">Category</span>
+          <select bind:value={query.category} class:active={query.category !== null}>
+            <option value={null}>All categories</option>
+            {#each categories as category (category)}
+              <option value={category}>{category}</option>
+            {/each}
+          </select>
+        </label>
+        <label>
+          <span class="visually-hidden">Stock level</span>
+          <select bind:value={query.stock} class:active={query.stock !== 'all'}>
+            {#each Object.entries(STOCK_FILTER_LABELS) as [value, label] (value)}
+              <option value={value as StockFilter}>{label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="wide">
+          <span class="visually-hidden">Sort by</span>
+          <select bind:value={query.sort}>
+            {#each Object.entries(SORT_LABELS) as [value, label] (value)}
+              <option value={value as SortOrder}>Sort: {label}</option>
+            {/each}
+          </select>
+        </label>
+      </div>
+
+      {#if inactiveCount > 0}
+        <label class="toggle">
+          <input type="checkbox" bind:checked={query.showInactive} />
+          Show deactivated products ({inactiveCount})
+        </label>
+      {/if}
+    </div>
+
+    <div class="summary">
+      <p class="muted count" role="status">
+        {results.length}
+        {results.length === 1 ? 'product' : 'products'}{filtered ? ' found' : ''}
+      </p>
+      {#if filtered}
+        <button type="button" class="link-button" onclick={clearFilters}>Clear search &amp; filters</button>
+      {/if}
+    </div>
+
+    {#if results.length === 0}
+      <div class="card empty">
+        <Icon name="search" size={36} />
+        {#if query.text.trim()}
+          <h2>No products match “{query.text.trim()}”</h2>
+        {:else}
+          <h2>No products match these filters</h2>
+        {/if}
+        <p class="muted">Check the spelling, try part of the name, or clear the filters.</p>
+        <button type="button" class="btn btn-secondary" onclick={clearFilters}>Clear search &amp; filters</button>
+      </div>
     {:else}
-      <p class="muted count">{shown.length} {shown.length === 1 ? 'product' : 'products'}</p>
       <ul class="list card">
-        {#each shown as product (product.id)}
+        {#each results as product (product.id)}
           <li><ProductRow {product} /></li>
         {/each}
       </ul>
     {/if}
-
-    <ComingSoon phase={5} description="Search by name or barcode, filter by category or stock, and sorting." />
   {/if}
   <!-- Room so the round + button never covers the last product. -->
   <div class="fab-space" aria-hidden="true"></div>
@@ -115,10 +220,95 @@
   .empty h2 {
     color: var(--color-text);
     font-size: var(--text-lg);
+    overflow-wrap: anywhere;
   }
 
   .empty p {
     margin: 0 0 var(--space-2);
+  }
+
+  .tools {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .search {
+    position: relative;
+  }
+
+  .search input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 var(--touch-target) 0 44px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: var(--text-md);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .search input:focus {
+    border-color: var(--color-primary);
+    outline: 2px solid var(--color-primary-soft);
+    outline-offset: 0;
+  }
+
+  /* Hide the browser's own small "x"; we show a bigger one. */
+  .search input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-muted);
+    display: grid;
+  }
+
+  .clear {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--touch-target);
+    height: var(--touch-target);
+    display: grid;
+    place-items: center;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+  }
+
+  .selects {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+
+  .selects .wide {
+    grid-column: 1 / -1;
+  }
+
+  select {
+    width: 100%;
+    min-height: var(--touch-target);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  select.active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
   }
 
   .toggle {
@@ -135,9 +325,27 @@
     accent-color: var(--color-primary);
   }
 
+  .summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 32px;
+  }
+
   .count {
     margin: 0;
     font-size: var(--text-sm);
+  }
+
+  .link-button {
+    min-height: var(--touch-target);
+    border: 0;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    cursor: pointer;
   }
 
   .list {

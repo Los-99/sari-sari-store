@@ -18,25 +18,29 @@
 </script>
 
 <main class="screen">
-  {#if route.name === 'dashboard'}
-    <Dashboard />
-  {:else if route.name === 'products'}
-    <ProductList />
-  {:else if route.name === 'product-new'}
-    {#key route.barcode}<ProductForm barcode={route.barcode} />{/key}
-  {:else if route.name === 'product-detail'}
-    {#key route.id}<ProductDetail productId={route.id} />{/key}
-  {:else if route.name === 'product-edit'}
-    {#key route.id}<ProductForm productId={route.id} />{/key}
-  {:else if route.name === 'scan'}
-    <Scanner />
-  {:else if route.name === 'inventory'}
-    <Inventory />
-  {:else if route.name === 'settings'}
-    <Settings />
-  {:else}
-    <NotFound />
-  {/if}
+  <!-- Each visit to a screen starts it fresh. Typing a search (which only
+       updates the address) does not count as a new visit. -->
+  {#key router.visit}
+    {#if route.name === 'dashboard'}
+      <Dashboard />
+    {:else if route.name === 'products'}
+      <ProductList initialQuery={route.query} />
+    {:else if route.name === 'product-new'}
+      <ProductForm barcode={route.barcode} />
+    {:else if route.name === 'product-detail'}
+      <ProductDetail productId={route.id} />
+    {:else if route.name === 'product-edit'}
+      <ProductForm productId={route.id} />
+    {:else if route.name === 'scan'}
+      <Scanner />
+    {:else if route.name === 'inventory'}
+      <Inventory initialView={route.view} />
+    {:else if route.name === 'settings'}
+      <Settings />
+    {:else}
+      <NotFound />
+    {/if}
+  {/key}
 </main>
 
 <!-- Messages sit just above the bottom navigation, newest at the bottom. -->

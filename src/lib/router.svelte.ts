@@ -2,22 +2,49 @@ import { parseRoute, type Route } from './routes';
 
 /**
  * The screen currently shown. Screens read `router.route`; they change it
- * only through `navigate()` and `goBack()` below.
+ * only through `navigate()`, `goBack()` and `replaceAddress()` below.
+ * `visit` goes up each time the user arrives at a screen, so App.svelte can
+ * start that screen fresh.
  */
-export const router = $state<{ route: Route }>({ route: parseRoute(location.hash) });
+export const router = $state<{ route: Route; visit: number }>({ route: parseRoute(location.hash), visit: 0 });
 
-/**
- * How many screens deep the user has gone inside the app. It is stored in
- * the browser history so the phone's own Back button and our on-screen
- * back arrow always agree.
- */
-function currentDepth(): number {
-  const state = history.state as { depth?: number } | null;
-  return state?.depth ?? 0;
+interface HistoryEntry {
+  /** How many screens deep inside the app. Lets Back and our ← arrow agree. */
+  depth?: number;
+  /** Where the page was scrolled when the user left it. */
+  scrollY?: number;
 }
 
-function showCurrentAddress() {
+function entry(): HistoryEntry {
+  return (history.state as HistoryEntry | null) ?? {};
+}
+
+function currentDepth(): number {
+  return entry().depth ?? 0;
+}
+
+let shownHash = location.hash;
+
+function showCurrentAddress(force = false) {
+  if (!force && location.hash === shownHash) return;
+  shownHash = location.hash;
   router.route = parseRoute(location.hash);
+  router.visit += 1;
+}
+
+/**
+ * Change the address without reloading the screen, e.g. while typing a search,
+ * so Back returns to the same results.
+ */
+export function replaceAddress(path: string) {
+  history.replaceState(entry(), '', `#${path}`);
+  shownHash = location.hash;
+  router.route = parseRoute(location.hash);
+}
+
+/** Where to scroll back to after returning to a list with Back. */
+export function savedScrollPosition(): number | undefined {
+  return entry().scrollY;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +90,8 @@ window.addEventListener('popstate', () => {
   }
   showCurrentAddress();
 });
-window.addEventListener('hashchange', showCurrentAddress);
+// Covers addresses typed by hand. Does nothing if the screen is already shown.
+window.addEventListener('hashchange', () => showCurrentAddress());
 
 // ---------------------------------------------------------------------------
 
@@ -73,9 +101,11 @@ export async function navigate(path: string, options: { replace?: boolean; force
   if (options.replace) {
     history.replaceState({ depth: currentDepth() }, '', url);
   } else {
+    // Remember the scroll position of the screen we are leaving.
+    history.replaceState({ ...entry(), scrollY: window.scrollY }, '');
     history.pushState({ depth: currentDepth() + 1 }, '', url);
   }
-  showCurrentAddress();
+  showCurrentAddress(true);
   window.scrollTo(0, 0);
 }
 

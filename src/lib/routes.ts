@@ -7,14 +7,19 @@
  * without any server setup.
  */
 
+import { queryFromParams, queryToParams, type ProductQuery } from './util/product-filter';
+
+/** The three lists on the Inventory screen. */
+export type InventoryView = 'low' | 'out' | 'all';
+
 export type Route =
   | { name: 'dashboard' }
-  | { name: 'products' }
+  | { name: 'products'; query: ProductQuery }
   | { name: 'product-new'; barcode?: string }
   | { name: 'product-detail'; id: number }
   | { name: 'product-edit'; id: number }
   | { name: 'scan' }
-  | { name: 'inventory' }
+  | { name: 'inventory'; view: InventoryView }
   | { name: 'settings' }
   | { name: 'not-found' };
 
@@ -24,14 +29,20 @@ export type Tab = 'home' | 'products' | 'scan' | 'inventory' | 'settings';
 export const paths = {
   dashboard: '/',
   products: '/products',
+  productsMatching: (query: ProductQuery) => withQuery('/products', queryToParams(query)),
   productNew: (barcode?: string) =>
     barcode ? `/products/new?barcode=${encodeURIComponent(barcode)}` : '/products/new',
   productDetail: (id: number) => `/products/${id}`,
   productEdit: (id: number) => `/products/${id}/edit`,
   scan: '/scan',
   inventory: '/inventory',
+  inventoryView: (view: InventoryView) => (view === 'low' ? '/inventory' : `/inventory?view=${view}`),
   settings: '/settings',
 };
+
+function withQuery(path: string, query: string): string {
+  return query === '' ? path : `${path}?${query}`;
+}
 
 export function parseRoute(hash: string): Route {
   const address = hash.replace(/^#/, '');
@@ -47,11 +58,13 @@ export function parseRoute(hash: string): Route {
   if (parts.length === 1) {
     switch (first) {
       case 'products':
-        return { name: 'products' };
+        return { name: 'products', query: queryFromParams(query) };
       case 'scan':
         return { name: 'scan' };
-      case 'inventory':
-        return { name: 'inventory' };
+      case 'inventory': {
+        const view = query.get('view');
+        return { name: 'inventory', view: view === 'out' || view === 'all' ? view : 'low' };
+      }
       case 'settings':
         return { name: 'settings' };
     }

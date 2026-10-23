@@ -114,3 +114,51 @@ Do these on your phone, opened from the Home Screen icon. Settings should show *
 
 Run `npm test`. All checks should pass, including the new ones for the database
 (`src/lib/db/products.test.ts`) and the form (`src/lib/model/product-form.test.ts`).
+
+## Phase 5: Search, filters and inventory
+
+Settings should show **App version 0.4.0**. Use **airplane mode** for the whole test.
+You need a few products first, ideally including:
+
+- some with a barcode and some without
+- at least 2 categories
+- one **low** (e.g. stock 2, alert 5), one **out** (stock 0), and one deactivated
+
+### Search (Products tab)
+
+- [ ] Type part of a name, e.g. `canton`. Only matching products show, and the count says "… found".
+- [ ] Capitals don't matter: `CANTON` finds the same.
+- [ ] Words in any order: `canton lucky` finds "Lucky Me Pancit Canton".
+- [ ] Accents don't matter: `pina` finds a product named "Piña …".
+- [ ] Full barcode, e.g. `4801981116072`, finds that product. Part of a barcode (last 5–6 digits) also works.
+- [ ] A barcode with leading zeros (e.g. `0048…`) is found when you type the zeros.
+- [ ] Nonsense like `xyz` shows **No products match "xyz"** with a **Clear search & filters** button that works.
+- [ ] The **×** in the search box clears it.
+
+### Filters and sorting
+
+- [ ] **Category** shows only categories you've used. Choosing one shows only those products, and the box turns green.
+- [ ] **Stock level**: *Low stock*, *Out of stock* and *Low or out of stock* each show the right products.
+- [ ] Search + category + stock together narrow the list correctly.
+- [ ] **Sort**: Name (A–Z), Price lowest/highest first, Stock fewest/most first all reorder correctly.
+- [ ] **Show deactivated products** adds deactivated items (greyed, INACTIVE).
+- [ ] **Clear search & filters** resets search, category and stock (sorting stays).
+
+### Back button keeps your place
+
+- [ ] Search and filter, scroll down, open a product, then press **←**. The same search, filters and scroll position are still there.
+- [ ] Tap the **Products** tab at the bottom. The list starts fresh, with no filters.
+
+### Inventory tab
+
+- [ ] **Home → Low stock card** opens Inventory on the **Low** tab. **Out of stock card** opens the **Out** tab.
+- [ ] Tab counts match the Home numbers. **All** lists every active product, fewest stock first.
+- [ ] On **Low**, tap **+1** until a product is above its alert. It stays in the list marked **✓ Restocked**
+      (so it doesn't jump away). Switch tabs and back: now it's gone from Low.
+- [ ] **−1** is greyed out at 0. **Set…** sets an exact number, and wrong input (`-1`, `abc`) is refused.
+- [ ] Tap a product's name to open its details; **←** returns to the same Inventory tab.
+- [ ] With nothing low, the Low tab says **"Nothing is running low"**.
+
+### Automatic checks (on your PC)
+
+Run `npm test`. The new search/filter checks are in `src/lib/util/product-filter.test.ts`.
