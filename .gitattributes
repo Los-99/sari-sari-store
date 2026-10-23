@@ -1,0 +1,5 @@
+# Store text files with Unix line endings so builds behave the same on
+# Windows and on GitHub's Linux build servers.
+* text=auto eol=lf
+*.png binary
+*.ico binary
