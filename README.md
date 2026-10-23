@@ -33,4 +33,5 @@ Run these in a terminal inside this folder.
 | `public/` | App icons |
 | `vite.config.ts` | Build settings, app name and offline settings |
 | `.github/workflows/deploy.yml` | Publishes the app to GitHub Pages |
-| `docs/` | Testing checklist, data model and, later, the backup format and setup guide |
+| `src/lib/scanner/`, `src/lib/backup/` | Camera barcode scanning, and backup export / restore |
+| `docs/` | Testing checklist, data model, backup file format and, later, the setup guide |

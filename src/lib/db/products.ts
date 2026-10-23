@@ -1,6 +1,12 @@
 import type { IDBPTransaction } from 'idb';
 import { getDb, type StoreSchema } from './database';
-import { DuplicateBarcodeError, ProductNotFoundError, ProductValidationError, StockChangeError } from './errors';
+import {
+  DuplicateBarcodeError,
+  ProductNotFoundError,
+  ProductValidationError,
+  RestoreError,
+  StockChangeError,
+} from './errors';
 import { LIMITS, SUGGESTED_CATEGORIES, type Product, type ProductFields } from '../model/product';
 import { nameKey, normalizeBarcode, validateProduct } from '../util/validation';
 
@@ -101,6 +107,77 @@ export async function adjustStock(id: number, change: number): Promise<Product> 
     if (quantity > LIMITS.maxStock) throw new StockChangeError('Stock is already at the maximum.');
     return { ...product, stockQuantity: quantity };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Restore from backup
+
+/** The products as they were just before the last restore, kept so it can be undone. */
+export interface RestoreSafetyCopy {
+  savedAt: number;
+  products: Product[];
+}
+
+const SAFETY_COPY_KEY = 'restoreSafetyCopy';
+
+/**
+ * Replaces ALL products with `products` (already checked by the backup reader).
+ * The current products are first saved as a safety copy, in the same
+ * transaction: either everything happens, or nothing changes.
+ */
+export async function replaceAllProducts(products: readonly Product[]): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction(['products', 'meta'], 'readwrite');
+  tx.done.catch(() => {});
+  try {
+    const store = tx.objectStore('products');
+    const current = await store.getAll();
+    const safetyCopy: RestoreSafetyCopy = { savedAt: Date.now(), products: current };
+    await tx.objectStore('meta').put(safetyCopy, SAFETY_COPY_KEY);
+    await store.clear();
+    await Promise.all(products.map((product) => store.put(product)));
+    await tx.done;
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      // Already finished or aborted.
+    }
+    throw error;
+  }
+  announceChange();
+}
+
+export async function getRestoreSafetyCopy(): Promise<RestoreSafetyCopy | undefined> {
+  const db = await getDb();
+  return (await db.get('meta', SAFETY_COPY_KEY)) as RestoreSafetyCopy | undefined;
+}
+
+/** Puts back the products from before the last restore, then forgets the safety copy. */
+export async function undoLastRestore(): Promise<number> {
+  const db = await getDb();
+  const tx = db.transaction(['products', 'meta'], 'readwrite');
+  tx.done.catch(() => {});
+  let count = 0;
+  try {
+    const safetyCopy = (await tx.objectStore('meta').get(SAFETY_COPY_KEY)) as RestoreSafetyCopy | undefined;
+    if (!safetyCopy) throw new RestoreError('There is no restore to undo.');
+    const store = tx.objectStore('products');
+    await store.clear();
+    await Promise.all(safetyCopy.products.map((product) => store.put(product)));
+    await tx.objectStore('meta').delete(SAFETY_COPY_KEY);
+    count = safetyCopy.products.length;
+    await tx.done;
+  } catch (error) {
+    try {
+      tx.abort();
+    } catch {
+      // Already finished or aborted.
+    }
+    throw error;
+  }
+  announceChange();
+  return count;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,11 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
-  import ComingSoon from '../components/ComingSoon.svelte';
+  import ExportBackupButton from '../components/ExportBackupButton.svelte';
+  import RestorePanel from '../components/RestorePanel.svelte';
   import { pwa } from '../lib/pwa.svelte';
   import { storage } from '../lib/db/storage.svelte';
+  import { backupStatus } from '../lib/backup/backup.svelte';
+  import { formatDateTime } from '../lib/util/format';
 
   const version = __APP_VERSION__;
 
@@ -35,7 +38,53 @@
 
 <div class="content">
   <h2 class="section-title">Backup &amp; restore</h2>
-  <ComingSoon phase={7} description="Export your products to a file, and restore them on this or another phone." />
+  <section class="card backup">
+    <p class="last-backup">
+      Last backup:
+      <strong class:never={backupStatus.lastBackupAt === null}>
+        {backupStatus.lastBackupAt === undefined
+          ? '…'
+          : backupStatus.lastBackupAt === null
+            ? 'Never on this phone'
+            : formatDateTime(backupStatus.lastBackupAt)}
+      </strong>
+    </p>
+    <p class="muted small">
+      A backup is one file with all your products. Keep it somewhere other than this app: the Files app,
+      Google Drive, or send it to another phone.
+    </p>
+    <ExportBackupButton label="Back up now" showDownload />
+    <hr />
+    <RestorePanel />
+  </section>
+
+  <details class="card guide">
+    <summary>How to move your products to a new phone</summary>
+    <ol>
+      <li>On the <strong>old phone</strong>: Settings → <strong>Back up now</strong>.</li>
+      <li>
+        Send the backup file to the new phone: AirDrop, Nearby/Quick Share, Messenger, email, Google Drive or a
+        USB cable.
+      </li>
+      <li>
+        On the <strong>new phone</strong>: open the app link, add it to the Home Screen, and open it from the icon.
+      </li>
+      <li>Settings → <strong>Restore from a backup file</strong> → choose the file → <strong>Replace my products</strong>.</li>
+    </ol>
+  </details>
+
+  <details class="card guide">
+    <summary>Keeping your products safe</summary>
+    <ul>
+      <li>Back up <strong>at least once a week</strong>, and after adding many products.</li>
+      <li>Keep the backup file <strong>outside this app</strong>, ideally in two places.</li>
+      <li>
+        <strong>Back up before</strong> removing the app from the Home Screen, clearing browser data, or resetting the
+        phone. Those can delete all products.
+      </li>
+      <li>Updating the app does <strong>not</strong> delete your products.</li>
+    </ul>
+  </details>
 
   <h2 class="section-title">App status</h2>
   <dl class="card status">
@@ -72,6 +121,47 @@
 </div>
 
 <style>
+  .backup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .backup p {
+    margin: 0;
+  }
+
+  .last-backup strong.never {
+    color: var(--color-low-text);
+  }
+
+  .small {
+    font-size: var(--text-sm);
+  }
+
+  hr {
+    width: 100%;
+    margin: var(--space-1) 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .guide summary {
+    min-height: 32px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .guide ol,
+  .guide ul {
+    margin: var(--space-3) 0 0;
+    padding-left: var(--space-5);
+  }
+
+  .guide li + li {
+    margin-top: var(--space-2);
+  }
+
   .status {
     margin: 0;
     padding: 0;

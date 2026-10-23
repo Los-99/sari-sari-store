@@ -219,3 +219,60 @@ Do the first test **with internet on**, then the rest in **airplane mode**.
 ### Automatic checks (on your PC)
 
 Run `npm test`. The new scan-confirmation checks are in `src/lib/scanner/scan-confirmer.test.ts`.
+
+## Phase 7: Backup and restore
+
+Settings should show **App version 0.6.0**. Have at least a few products.
+Airplane mode is fine for everything except sending the file to another device.
+
+### Reminder
+
+- [ ] With products and no backup yet, **Home** shows an orange **"You haven't backed up yet"** card with **Back up now**.
+- [ ] After backing up, Home shows a small green **"Last backup: today"** instead.
+
+### Making a backup (iPhone)
+
+- [ ] Settings → **Back up now**. The **Share** sheet opens. Choose **Save to Files** → pick a folder (e.g. *On My iPhone*) → **Save**.
+- [ ] A message says **"Backup done"**, and **Last backup** shows today's date and time.
+- [ ] Open the **Files** app. The file `sarisari-backup-YYYY-MM-DD-HHMM.json` is there.
+- [ ] If the phone says the share wasn't allowed, a **"Tap again to save the backup"** button appears. Tapping it opens the Share sheet.
+- [ ] Cancelling the Share sheet does **not** change "Last backup".
+
+### Making a backup (Android)
+
+- [ ] **Back up now** opens the share menu (Drive, Messenger, Gmail…), or the file goes straight to **Downloads**.
+- [ ] **Or save it with the browser's download instead** saves to **Downloads**.
+
+### Restoring
+
+- [ ] Make a backup. Then change something: edit a price and add a test product.
+- [ ] Settings → **Restore from a backup file** → choose the backup. A **preview** shows the date, the number of products
+      in the backup and on the phone, and an orange warning that restoring **replaces all** products.
+      Because you changed things after the backup, it also warns the backup is **older**.
+- [ ] **Cancel**. Nothing changes.
+- [ ] Restore again → **Replace my products** → a second box asks to confirm → **Replace**.
+      **"Restored N products"** appears. The price change and the test product are gone, matching the backup.
+- [ ] Barcodes with leading zeros, deactivated products, stock numbers and categories all came back correctly.
+
+### Undo
+
+- [ ] After a restore, **Undo last restore** appears under the Restore button. Tap it → confirm.
+      Your products return to how they were just before the restore (the test product is back).
+- [ ] After undo, the Undo option disappears.
+
+### Bad files are refused safely
+
+- [ ] Try to restore a file that isn't a backup (e.g. a photo, or any other .json file). It's refused with a clear message,
+      plus **"Your current products were not changed"**.
+- [ ] *(Optional, on a PC)* Open a backup in Notepad, delete the second half, save it, and try to restore it.
+      It's refused as damaged, and nothing changes.
+
+### Moving to another phone (or reinstalling)
+
+- [ ] Send a backup file to a second phone (or the same phone after removing and re-adding the app).
+      Open the app there → Settings → **Restore from a backup file**. All products appear.
+- [ ] The guides **"How to move your products to a new phone"** and **"Keeping your products safe"** open and are easy to follow.
+
+### Automatic checks (on your PC)
+
+Run `npm test`. The new checks are in `src/lib/backup/format.test.ts` and the restore/undo section of `src/lib/db/products.test.ts`.

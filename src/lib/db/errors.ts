@@ -39,13 +39,21 @@ export class StockChangeError extends Error {
   }
 }
 
+export class RestoreError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RestoreError';
+  }
+}
+
 /** Turns any error into a short message that is safe to show the store owner. */
 export function describeError(error: unknown): string {
   if (
     error instanceof ProductValidationError ||
     error instanceof DuplicateBarcodeError ||
     error instanceof ProductNotFoundError ||
-    error instanceof StockChangeError
+    error instanceof StockChangeError ||
+    error instanceof RestoreError
   ) {
     return error.message;
   }

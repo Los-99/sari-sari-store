@@ -1,7 +1,7 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
   import Icon from '../components/Icon.svelte';
-  import ComingSoon from '../components/ComingSoon.svelte';
+  import BackupReminder from '../components/BackupReminder.svelte';
   import { linkTo } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
@@ -64,7 +64,7 @@
     <Icon name="plus" size={28} /> Add product
   </a>
 
-  <ComingSoon phase={7} description="A reminder showing how long ago you last backed up your products." />
+  <BackupReminder hasProducts={(summary?.active ?? 0) > 0} />
 </div>
 
 <style>

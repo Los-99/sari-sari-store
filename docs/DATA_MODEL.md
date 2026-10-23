@@ -29,9 +29,17 @@ One record per product. The key is `id`, assigned automatically and never reused
 
 ## `meta`
 
-Small key–value facts about the app (for example, when the last backup was
-made, added in Phase 7). Phase 3 test builds also wrote `firstOpenedAt` and
-`openCount` here; they are no longer used and are harmless.
+Small key–value facts about the app.
+
+| Key | Meaning |
+|---|---|
+| `lastBackupAt` | When a backup was last exported on this phone (`Date.now()` value) |
+| `restoreSafetyCopy` | `{ savedAt, products }`: the products as they were just before the last restore, for **Undo last restore**. Removed after undo. |
+
+Phase 3 test builds also wrote `firstOpenedAt` and `openCount` here; they are
+no longer used and are harmless.
+
+The backup file format is described in [BACKUP_FORMAT.md](BACKUP_FORMAT.md).
 
 ## Changing the structure later
 

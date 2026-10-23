@@ -2,17 +2,26 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { closeDb } from './database';
-import { DuplicateBarcodeError, ProductNotFoundError, ProductValidationError, StockChangeError } from './errors';
+import {
+  DuplicateBarcodeError,
+  ProductNotFoundError,
+  ProductValidationError,
+  RestoreError,
+  StockChangeError,
+} from './errors';
 import {
   adjustStock,
   createProduct,
   findProductByBarcode,
   findProductsWithSameName,
   getProduct,
+  getRestoreSafetyCopy,
   listCategories,
   listProducts,
+  replaceAllProducts,
   setProductActive,
   setStock,
+  undoLastRestore,
   updateProduct,
 } from './products';
 import type { ProductFields } from '../model/product';
@@ -164,6 +173,51 @@ describe('stock changes', () => {
     const saved = await createProduct(fields({ stockQuantity: 0 }));
     await Promise.all(Array.from({ length: 10 }, () => adjustStock(saved.id, 1)));
     expect((await getProduct(saved.id))?.stockQuantity).toBe(10);
+  });
+});
+
+describe('restore and undo', () => {
+  it('replaces every product, keeping ids, barcodes and dates', async () => {
+    await createProduct(fields({ name: 'Old one' }));
+    const restored = [
+      { ...fields({ barcode: '0012' }), id: 40, createdAt: 1, updatedAt: 2 },
+      { ...fields({ name: 'No barcode', barcode: undefined }), id: 41, createdAt: 3, updatedAt: 4 },
+    ];
+    delete restored[1].barcode;
+    await replaceAllProducts(restored);
+    const all = await listProducts();
+    expect(all.map((p) => p.id).sort()).toEqual([40, 41]);
+    expect((await findProductByBarcode('0012'))?.createdAt).toBe(1);
+  });
+
+  it('keeps a safety copy and can undo', async () => {
+    const original = await createProduct(fields({ name: 'Before restore' }));
+    await replaceAllProducts([]);
+    expect(await listProducts()).toHaveLength(0);
+    expect((await getRestoreSafetyCopy())?.products).toHaveLength(1);
+
+    expect(await undoLastRestore()).toBe(1);
+    expect(await getProduct(original.id)).toEqual(original);
+    expect(await getRestoreSafetyCopy()).toBeUndefined();
+    await expect(undoLastRestore()).rejects.toBeInstanceOf(RestoreError);
+  });
+
+  it('changes nothing if the restore fails part-way', async () => {
+    const original = await createProduct(fields());
+    // Two products with the same barcode: the database refuses the second.
+    const broken = [
+      { ...fields({ name: 'A', barcode: '999' }), id: 1, createdAt: 0, updatedAt: 0 },
+      { ...fields({ name: 'B', barcode: '999' }), id: 2, createdAt: 0, updatedAt: 0 },
+    ];
+    await expect(replaceAllProducts(broken)).rejects.toBeTruthy();
+    expect(await listProducts()).toEqual([original]);
+    expect(await getRestoreSafetyCopy()).toBeUndefined();
+  });
+
+  it('new products after a restore get fresh ids', async () => {
+    await replaceAllProducts([{ ...fields(), id: 50, createdAt: 0, updatedAt: 0 }]);
+    const added = await createProduct(fields({ name: 'New', barcode: undefined }));
+    expect(added.id).toBeGreaterThan(50);
   });
 });
 
