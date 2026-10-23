@@ -103,7 +103,7 @@
         <input
           id="product-search"
           type="search"
-          placeholder="Search name or barcode"
+          placeholder="Name or barcode"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
@@ -333,7 +333,8 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     background: var(--color-surface);
-    font-size: var(--text-sm);
+    /* 16px or more: smaller text makes iPhone zoom in when the box is tapped. */
+    font-size: 1rem;
     font-weight: 600;
   }
 

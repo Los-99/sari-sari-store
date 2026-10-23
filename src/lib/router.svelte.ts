@@ -69,7 +69,37 @@ async function mayLeave(): Promise<boolean> {
   return guard ? guard.check() : true;
 }
 
+// ---------------------------------------------------------------------------
+// Overlays (e.g. the full-screen camera): the phone's Back button closes the
+// overlay instead of leaving the screen underneath.
+
+let overlayClose: (() => void) | null = null;
+let ignoreNextPop = false;
+
+/** Call when an overlay opens. Returns a function to call when it closes by other means. */
+export function openOverlay(close: () => void): () => void {
+  history.pushState({ ...entry(), overlay: true }, '');
+  overlayClose = close;
+  return () => {
+    if (overlayClose !== close) return;
+    overlayClose = null;
+    // Remove the extra history entry without triggering anything else.
+    ignoreNextPop = true;
+    history.back();
+  };
+}
+
 window.addEventListener('popstate', () => {
+  if (ignoreNextPop) {
+    ignoreNextPop = false;
+    return;
+  }
+  if (overlayClose) {
+    const close = overlayClose;
+    overlayClose = null;
+    close();
+    return;
+  }
   if (skipGuardOnce) {
     skipGuardOnce = false;
     showCurrentAddress();

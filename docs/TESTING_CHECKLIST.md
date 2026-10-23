@@ -138,7 +138,7 @@ You need a few products first, ideally including:
 ### Filters and sorting
 
 - [ ] **Category** shows only categories you've used. Choosing one shows only those products, and the box turns green.
-- [ ] **Stock level**: *Low stock*, *Out of stock* and *Low or out of stock* each show the right products.
+- [ ] **Stock level**: *Low stock*, *Out of stock* and *Low or out* each show the right products.
 - [ ] Search + category + stock together narrow the list correctly.
 - [ ] **Sort**: Name (A–Z), Price lowest/highest first, Stock fewest/most first all reorder correctly.
 - [ ] **Show deactivated products** adds deactivated items (greyed, INACTIVE).
@@ -276,3 +276,29 @@ Airplane mode is fine for everything except sending the file to another device.
 ### Automatic checks (on your PC)
 
 Run `npm test`. The new checks are in `src/lib/backup/format.test.ts` and the restore/undo section of `src/lib/db/products.test.ts`.
+
+## Phase 8: Final check of Version 1.0
+
+Settings should show **App version 1.0.0**. This is a short run through the whole app,
+plus the refinements made in Phase 8. Use **airplane mode** throughout.
+
+### Refinements made in Phase 8
+
+- [ ] **Product form, keyboard Return key:** typing a name and pressing Return/Go moves to the **Barcode** box
+      (it no longer tries to save). Pressing Return in the last box (**Low-stock alert**) saves.
+- [ ] **Category spelling:** type `beverages` (small b) for a new product. After saving, the category filter shows
+      only **one** "Beverages", not two.
+- [ ] *(Android)* In Add/Edit Product, open the **scan button**, then press the phone's **Back** button.
+      The camera closes and you're **still on the form** with your typing kept.
+- [ ] *(iPhone)* Tapping the **category / stock / sort** boxes on Products no longer zooms the screen in.
+- [ ] The **INACTIVE** label and the Inventory tabs are easy to read.
+
+### Whole-app run-through (about 10 minutes)
+
+- [ ] Open from the Home Screen icon in airplane mode. Home shows correct counts.
+- [ ] **Scan** an unknown product → **Register** → save → it appears in Products and on Home.
+- [ ] **Search** it by name and by scanning. **Filter** by its category.
+- [ ] **Inventory**: set its stock to below its alert. It shows under **Low**, then restock with **+1**.
+- [ ] **Edit** its price and **deactivate** it, then reactivate it.
+- [ ] **Back up**, restore from that file, then **Undo last restore**.
+- [ ] Close the app completely, restart the phone and reopen it. Everything is still there.

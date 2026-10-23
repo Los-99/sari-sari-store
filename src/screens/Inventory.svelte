@@ -217,7 +217,7 @@
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--color-text-muted);
+    color: var(--color-text-on-grey);
     font-weight: 700;
     cursor: pointer;
   }

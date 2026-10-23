@@ -29,8 +29,8 @@ export const DEFAULT_QUERY: ProductQuery = {
 };
 
 export const STOCK_FILTER_LABELS: Record<StockFilter, string> = {
-  all: 'All stock levels',
-  attention: 'Low or out of stock',
+  all: 'All stock',
+  attention: 'Low or out',
   low: 'Low stock',
   out: 'Out of stock',
 };

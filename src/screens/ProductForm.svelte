@@ -144,7 +144,14 @@
       await focusFirstError(result.errors);
       return;
     }
-    const fields = result.fields;
+    // "beverages" and "Beverages" are the same category: reuse the existing spelling
+    // so the category filter doesn't show both. Same for the suggested units.
+    const sameText = (a: string, b: string) => a.localeCompare(b, 'en-PH', { sensitivity: 'base' }) === 0;
+    const fields = {
+      ...result.fields,
+      category: categories.find((c) => sameText(c, result.fields.category)) ?? result.fields.category,
+      unit: SUGGESTED_UNITS.find((u) => sameText(u, result.fields.unit)) ?? result.fields.unit,
+    };
 
     saving = true;
     try {
@@ -208,6 +215,29 @@
     showToast(`Barcode ${code} scanned.`);
   }
 
+  /**
+   * The keyboard's Return/Go key moves to the next box instead of saving a
+   * half-filled form. On the last box it saves.
+   */
+  function moveToNextField(event: KeyboardEvent) {
+    const target = event.target;
+    if (event.key !== 'Enter' || !(target instanceof HTMLInputElement)) return;
+    const index = FORM_ORDER.findIndex((key) => `pf-${key}` === target.id);
+    if (index === -1 || index === FORM_ORDER.length - 1) return;
+    event.preventDefault();
+    document.getElementById(`pf-${FORM_ORDER[index + 1]}`)?.focus();
+  }
+
+  let formElement: HTMLFormElement | undefined = $state();
+
+  // Listens to Return key presses coming from any box inside the form.
+  $effect(() => {
+    const form = formElement;
+    if (!form) return;
+    form.addEventListener('keydown', moveToNextField);
+    return () => form.removeEventListener('keydown', moveToNextField);
+  });
+
   function describedBy(key: keyof ProductFormValues, hasHint = false) {
     if (errors[key]) return `pf-${key}-error`;
     return hasHint ? `pf-${key}-hint` : undefined;
@@ -238,7 +268,7 @@
       </button>
     </div>
   {:else}
-    <form id="product-form" onsubmit={save} novalidate>
+    <form id="product-form" bind:this={formElement} onsubmit={save} novalidate>
       <section class="card group">
         <Field id="pf-name" label="Product name" required error={errors.name}>
           <input

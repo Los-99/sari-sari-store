@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import BarcodeScanner from './BarcodeScanner.svelte';
+  import { openOverlay } from '../lib/router.svelte';
 
   // Full-screen camera that reads one barcode and hands it back, e.g. to fill
   // the barcode field of the product form or the search box.
@@ -15,7 +16,12 @@
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // The phone's Back button closes the camera, not the screen underneath.
+    const release = openOverlay(() => onClose());
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      release();
+    };
   });
 </script>
 

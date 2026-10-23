@@ -5,7 +5,7 @@
 
 <div class="toasts" role="status" aria-live="polite">
   {#each toasts as toast (toast.id)}
-    <div class="toast" class:error={toast.kind === 'error'}>
+    <div class="toast" class:error={toast.kind === 'error'} role={toast.kind === 'error' ? 'alert' : undefined}>
       <Icon name={toast.kind === 'error' ? 'alert' : 'check'} size={20} />
       <span class="message">{toast.message}</span>
       <button type="button" class="close" aria-label="Close" onclick={() => dismissToast(toast.id)}>

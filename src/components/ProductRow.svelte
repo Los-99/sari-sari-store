@@ -67,6 +67,6 @@
 
   .inactive-badge {
     background: var(--color-border);
-    color: var(--color-text-muted);
+    color: var(--color-text-on-grey);
   }
 </style>
