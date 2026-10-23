@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0F6E56"/>
+  <!-- Awning -->
+  <path d="M112 172 L136 112 H376 L400 172 Z" fill="#FBBF24"/>
+  <path d="M112 168 a36 36 0 0 0 72 0 a36 36 0 0 0 72 0 a36 36 0 0 0 72 0 a36 36 0 0 0 72 0 Z" fill="#FBBF24"/>
+  <!-- Store front with a barcode -->
+  <rect x="136" y="204" width="240" height="196" fill="#FFFFFF"/>
+  <g fill="#0F6E56">
+    <rect x="176" y="240" width="12" height="120"/>
+    <rect x="200" y="240" width="6" height="120"/>
+    <rect x="216" y="240" width="18" height="120"/>
+    <rect x="244" y="240" width="6" height="120"/>
+    <rect x="262" y="240" width="12" height="120"/>
+    <rect x="284" y="240" width="6" height="120"/>
+    <rect x="300" y="240" width="18" height="120"/>
+    <rect x="328" y="240" width="8" height="120"/>
+  </g>
+  <!-- Counter -->
+  <rect x="112" y="400" width="288" height="24" rx="6" fill="#FBBF24"/>
+</svg>
