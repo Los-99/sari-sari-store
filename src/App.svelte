@@ -1,6 +1,8 @@
 <script lang="ts">
   import BottomNav from './components/BottomNav.svelte';
   import UpdateBanner from './components/UpdateBanner.svelte';
+  import ToastHost from './components/ToastHost.svelte';
+  import DialogHost from './components/DialogHost.svelte';
   import Dashboard from './screens/Dashboard.svelte';
   import ProductList from './screens/ProductList.svelte';
   import ProductForm from './screens/ProductForm.svelte';
@@ -21,7 +23,7 @@
   {:else if route.name === 'products'}
     <ProductList />
   {:else if route.name === 'product-new'}
-    <ProductForm barcode={route.barcode} />
+    {#key route.barcode}<ProductForm barcode={route.barcode} />{/key}
   {:else if route.name === 'product-detail'}
     {#key route.id}<ProductDetail productId={route.id} />{/key}
   {:else if route.name === 'product-edit'}
@@ -37,10 +39,33 @@
   {/if}
 </main>
 
-<UpdateBanner />
+<!-- Messages sit just above the bottom navigation, newest at the bottom. -->
+<div class="bottom-stack">
+  <ToastHost />
+  <UpdateBanner />
+</div>
 <BottomNav active={tabFor(route)} />
+<DialogHost />
 
 <style>
+  .bottom-stack {
+    position: fixed;
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--space-3));
+    z-index: 30;
+    max-width: calc(var(--content-max-width) - 2 * var(--space-3));
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    pointer-events: none;
+  }
+
+  .bottom-stack > :global(*) {
+    pointer-events: auto;
+  }
+
   .screen {
     min-height: 100dvh;
     /* Leave room so the bottom navigation never covers content. */

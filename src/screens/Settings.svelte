@@ -12,15 +12,6 @@
   const protectedLabel = $derived(
     storage.persisted === true ? 'Yes' : storage.persisted === false ? 'No' : 'Not available',
   );
-  const firstOpened = $derived(
-    storage.firstOpenedAt === null
-      ? ''
-      : new Date(storage.firstOpenedAt).toLocaleDateString('en-PH', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        }),
-  );
 
   // True when the app was opened from its Home Screen icon (not a browser tab).
   const openedFromHomeScreen =
@@ -64,12 +55,6 @@
       <dt>Protected from automatic clearing</dt>
       <dd class:yes={storage.persisted === true}>{protectedLabel}</dd>
     </div>
-    {#if storage.status === 'ready'}
-      <div>
-        <dt>Times opened since {firstOpened}</dt>
-        <dd>{storage.openCount}</dd>
-      </div>
-    {/if}
     <div>
       <dt>App version</dt>
       <dd>{version}</dd>

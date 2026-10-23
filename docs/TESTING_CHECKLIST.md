@@ -42,9 +42,7 @@ opens and keeps data between visits.
 - [ ] Settings → **App version** shows **0.2.0**.
 - [ ] Settings → **Database** shows **Ready** (green).
 - [ ] Home shows **0** for Active products, Low stock and Out of stock (not "…" and no red error box).
-- [ ] Note the number next to **Times opened since …**. Fully close the app (swipe it away), open it again,
-      and check that the number went **up by 1**. That proves saved data survives closing the app.
-- [ ] Do the same with **airplane mode on**. The number still goes up.
+- [ ] *(Phase 3 only: the "Times opened" counter was removed in Phase 4, which tests saving with real products.)*
 - [ ] Note what **Protected from automatic clearing** shows (Yes / No / Not available) and tell me.
       It doesn't stop the app from working; it tells us how carefully we need to back up on that phone.
 
@@ -52,3 +50,67 @@ opens and keeps data between visits.
 
 In a terminal in the project folder, run `npm test`. All checks should pass (green ✓).
 They cover peso/centavo conversion, validation rules, stock status and screen addresses.
+
+## Phase 4: Product management
+
+Do these on your phone, opened from the Home Screen icon. Settings should show **App version 0.3.0**
+(tap **Update** if the "new version" bar appears). Then turn on **airplane mode** for the whole test.
+
+### Adding products
+
+- [ ] Products tab with no products shows **"No products yet"** and an **Add product** button.
+- [ ] Add a product with every field filled, e.g. *Coke Mismo 290ml*, barcode `4801981116072`, Beverages,
+      bottle, cost `16.50`, selling `20`. Tap **Save product**.
+      → "Product saved" appears and the details screen opens.
+- [ ] The details show **₱20.00** selling, **₱16.50** cost and **Profit per bottle: ₱3.50**.
+- [ ] Press the **←** back arrow. You return to the list (not to the empty form), and the product is there.
+- [ ] Add a product **without a barcode** (e.g. *Ice tubig*). It saves. Add a second one without a barcode; it saves too.
+- [ ] Tap **Save product** on an empty form. Name, cost price and selling price turn red with messages,
+      and the screen jumps to the first problem. Fixing a field makes its message disappear as you type.
+- [ ] Try these prices and check the message: `-5` (negative), `12.505` (too many decimals), `12,50` (comma), `abc`.
+- [ ] Type `1,250` as a price. It's accepted as **₱1,250.00**.
+- [ ] Try stock `-1` and `2.5`. Both are refused.
+- [ ] Barcode with leading zeros, e.g. `0012345678905`: after saving, the details show all the zeros.
+
+### Duplicate and warning checks
+
+- [ ] Add another product using barcode `4801981116072` (already used). The barcode field says
+      **already used by "Coke Mismo 290ml"**, and an **Open "Coke Mismo 290ml"** button takes you to it. Nothing new is saved.
+- [ ] Add a product named **coke mismo 290ML** (same name, different capitals, no barcode). A **"Save anyway?"**
+      box warns about the same name. **Go back** keeps you on the form; **Save anyway** saves it.
+- [ ] Enter selling **lower** than cost. The form shows **Loss per unit** in red, and saving asks **"Save anyway?"**.
+
+### Editing
+
+- [ ] Open a product → **Edit**. The form shows the saved values (prices like `16.50`).
+- [ ] Change the selling price and tap **Save** (top bar). "Changes saved" appears and the details update.
+- [ ] Edit again, change something, then press **←**. A **"Discard changes?"** box appears.
+      **Keep editing** stays; **Discard** leaves without saving.
+- [ ] *(Android)* Same as above using the phone's own **Back** button / gesture.
+- [ ] Edit without changing anything, then press **←**. It leaves without asking.
+
+### Stock on the details screen
+
+- [ ] **+1** and **−1** change the stock right away. **−1** is greyed out at 0.
+- [ ] **Set…** opens a box. Enter `3` → "Stock set to 3 …". With a low-stock alert of 5, a **LOW** label appears.
+- [ ] Set stock to `0`. An **OUT** label appears.
+- [ ] In the Set box, try `-1` and `abc`. Both show an error and nothing changes.
+- [ ] Home shows the right numbers for Active products, Low stock and Out of stock.
+
+### Deactivating
+
+- [ ] Details → **Deactivate product**. A box explains it's hidden, not deleted. **Cancel** changes nothing.
+- [ ] Confirm. The product shows **"This product is deactivated"**, it's gone from the list, and the Home counts drop.
+- [ ] The list now shows **Show deactivated products (1)**. Tick it; the product appears greyed with **INACTIVE**.
+- [ ] Open it → **Reactivate**. It's back in the list and counts.
+- [ ] While it's deactivated, try adding a new product with its barcode. It's refused (barcode still reserved).
+
+### Data survives
+
+- [ ] Fully close the app (swipe it away) and reopen it, still in airplane mode. All products and changes are still there.
+- [ ] Restart the phone and open the app. Everything is still there.
+
+### Automatic checks (on your PC)
+
+Run `npm test`. All checks should pass, including the new ones for the database
+(`src/lib/db/products.test.ts`) and the form (`src/lib/model/product-form.test.ts`).

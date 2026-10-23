@@ -32,13 +32,6 @@
 
 <style>
   .banner {
-    position: fixed;
-    left: var(--space-3);
-    right: var(--space-3);
-    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + var(--space-3));
-    z-index: 30;
-    max-width: calc(var(--content-max-width) - 2 * var(--space-3));
-    margin: 0 auto;
     display: flex;
     align-items: center;
     gap: var(--space-3);

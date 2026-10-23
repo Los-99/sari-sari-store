@@ -29,12 +29,9 @@ One record per product. The key is `id`, assigned automatically and never reused
 
 ## `meta`
 
-Small key–value facts about the app.
-
-| Key | Meaning |
-|---|---|
-| `firstOpenedAt` | When the app was first opened on this phone |
-| `openCount` | How many times the app has been opened |
+Small key–value facts about the app (for example, when the last backup was
+made, added in Phase 7). Phase 3 test builds also wrote `firstOpenedAt` and
+`openCount` here; they are no longer used and are harmless.
 
 ## Changing the structure later
 

@@ -55,6 +55,13 @@ export function getDb(): Promise<StoreDatabase> {
   return connection;
 }
 
+/** Closes the connection. The next request opens a fresh one. */
+export async function closeDb(): Promise<void> {
+  const current = connection;
+  connection = null;
+  if (current) (await current.catch(() => null))?.close();
+}
+
 export async function getMeta<T>(key: string): Promise<T | undefined> {
   const db = await getDb();
   return (await db.get('meta', key)) as T | undefined;
