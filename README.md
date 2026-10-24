@@ -6,6 +6,11 @@ in the phone's browser, add it to the Home Screen, and it works without internet
 
 Your product data stays on your phone. It is never uploaded anywhere.
 
+**Start here:** [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) covers installing the app on a phone, publishing
+updates, backups and troubleshooting.
+
+App address: https://los-99.github.io/sari-sari-store/
+
 ## Commands
 
 Run these in a terminal inside this folder.
@@ -34,4 +39,4 @@ Run these in a terminal inside this folder.
 | `vite.config.ts` | Build settings, app name and offline settings |
 | `.github/workflows/deploy.yml` | Publishes the app to GitHub Pages |
 | `src/lib/scanner/`, `src/lib/backup/` | Camera barcode scanning, and backup export / restore |
-| `docs/` | Testing checklist, data model, backup file format and, later, the setup guide |
+| `docs/` | Setup guide, testing checklist, data model and backup file format |
