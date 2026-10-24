@@ -88,11 +88,12 @@
   }
 </script>
 
-<TopBar title={product?.name ?? 'Product'} backTo={paths.products}>
+<!-- The name is shown big on the page, so the bar only keeps it for screen readers. -->
+<TopBar title={product?.name ?? 'Product'} showTitle={false} backTo={paths.products}>
   {#snippet actions()}
     {#if product}
-      <a class="btn edit" href={`#${paths.productEdit(product.id)}`} onclick={linkTo(paths.productEdit(product.id))}>
-        Edit
+      <a class="btn" href={`#${paths.productEdit(product.id)}`} onclick={linkTo(paths.productEdit(product.id))}>
+        <Icon name="edit" size={18} /> Edit
       </a>
     {/if}
   {/snippet}
@@ -122,31 +123,32 @@
       </div>
     {/if}
 
-    <section class="card">
-      {#if photo}
-        <div class="photo"><PhotoView image={photo.image} alt={`Photo of ${product.name}`} size="fill" fit="contain" /></div>
-      {/if}
+    {#if photo}
+      <PhotoView image={photo.image} alt={`Photo of ${product.name}`} size="fill" fit="contain" />
+    {/if}
+
+    <section class="headline">
       <h2 class="name">{product.name}</h2>
-      <div class="prices">
-        <div>
-          <span class="label">Selling price</span>
-          <span class="big">{formatPeso(product.sellingPriceCentavos)}</span>
-        </div>
-        <div>
-          <span class="label">Cost price</span>
-          <span class="big muted-value">{formatPeso(product.costPriceCentavos)}</span>
-        </div>
-      </div>
-      <p class="profit" class:loss={profit < 0}>
-        {profit < 0 ? 'Loss' : 'Profit'} per {product.unit}: <strong>{formatPeso(Math.abs(profit))}</strong>
-      </p>
+      <p class="muted sub">{product.category} · {product.unit}</p>
     </section>
 
-    <section class="card">
+    <section class="card price-card" aria-label="Prices">
+      <div class="price-main">
+        <span class="label">Selling price</span>
+        <span class="selling">{formatPeso(product.sellingPriceCentavos)}</span>
+      </div>
+      <span class="profit-pill" class:loss={profit < 0}>
+        {profit < 0 ? 'Loss' : 'Profit'}
+        {formatPeso(Math.abs(profit))}
+      </span>
+      <p class="cost">Cost {formatPeso(product.costPriceCentavos)} per {product.unit}</p>
+    </section>
+
+    <section class="card" aria-label="Stock">
       <div class="stock-head">
         <div>
           <span class="label">Stock</span>
-          <span class="big">{formatQuantity(product.stockQuantity, product.unit)}</span>
+          <span class="stock">{formatQuantity(product.stockQuantity, product.unit)}</span>
         </div>
         <StockBadge {product} />
       </div>
@@ -170,18 +172,17 @@
       </div>
     </section>
 
-    <section class="card">
-      <dl class="facts">
-        <div><dt>Barcode</dt><dd class="barcode">{product.barcode ?? 'None'}</dd></div>
-        <div><dt>Category</dt><dd>{product.category}</dd></div>
-        <div><dt>Unit</dt><dd>{product.unit}</dd></div>
-        <div><dt>Added</dt><dd>{formatDateTime(product.createdAt)}</dd></div>
-        <div><dt>Last updated</dt><dd>{formatDateTime(product.updatedAt)}</dd></div>
-      </dl>
-    </section>
+    <h3 class="section-title">Details</h3>
+    <dl class="list-card facts">
+      <div><dt>Barcode</dt><dd class="barcode">{product.barcode ?? 'None'}</dd></div>
+      <div><dt>Category</dt><dd>{product.category}</dd></div>
+      <div><dt>Unit</dt><dd>{product.unit}</dd></div>
+      <div><dt>Added</dt><dd>{formatDateTime(product.createdAt)}</dd></div>
+      <div><dt>Last updated</dt><dd>{formatDateTime(product.updatedAt)}</dd></div>
+    </dl>
 
     {#if product.isActive}
-      <button type="button" class="btn btn-block deactivate" onclick={deactivate}>
+      <button type="button" class="btn btn-block btn-danger" onclick={deactivate}>
         <Icon name="out" size={20} /> Deactivate product
       </button>
     {/if}
@@ -193,10 +194,6 @@
 {/if}
 
 <style>
-  .edit {
-    color: var(--color-on-primary);
-  }
-
   .error {
     border-color: var(--color-out-text);
     background: var(--color-out-bg);
@@ -208,51 +205,71 @@
   }
 
   .inactive {
-    background: var(--color-border);
+    background: var(--color-surface-sunken);
   }
 
   .inactive p {
     margin: 0 0 var(--space-3);
   }
 
-  .photo {
-    margin-bottom: var(--space-3);
+  .headline {
+    margin-bottom: calc(-1 * var(--space-2));
   }
 
   .name {
     font-size: var(--text-xl);
+    font-weight: 800;
+    letter-spacing: -0.01em;
     overflow-wrap: anywhere;
+  }
+
+  .sub {
+    margin: 2px 0 0;
   }
 
   .label {
     display: block;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--color-text-muted);
   }
 
-  .big {
-    font-size: var(--text-xl);
-    font-weight: 800;
-  }
-
-  .muted-value {
-    color: var(--color-text-muted);
-  }
-
-  .prices {
+  .price-card {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
-    margin-top: var(--space-3);
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
   }
 
-  .profit {
-    margin: var(--space-3) 0 0;
+  .selling {
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    color: var(--color-primary);
+    line-height: 1.15;
+  }
+
+  .profit-pill {
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--color-ok-bg);
     color: var(--color-ok-text);
+    font-size: var(--text-sm);
+    font-weight: 750;
+    white-space: nowrap;
   }
 
-  .profit.loss {
+  .profit-pill.loss {
+    background: var(--color-out-bg);
     color: var(--color-danger);
+  }
+
+  .cost {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
   }
 
   .stock-head {
@@ -260,6 +277,11 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-3);
+  }
+
+  .stock {
+    font-size: var(--text-xl);
+    font-weight: 800;
   }
 
   .alert-note {
@@ -285,7 +307,7 @@
     display: flex;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-2) 0;
+    padding: var(--space-3) var(--space-4);
   }
 
   .facts div + div {
@@ -298,7 +320,7 @@
 
   dd {
     margin: 0;
-    font-weight: 600;
+    font-weight: 650;
     text-align: right;
     overflow-wrap: anywhere;
   }
@@ -306,11 +328,5 @@
   .barcode {
     font-family: ui-monospace, 'SF Mono', Consolas, monospace;
     letter-spacing: 0.04em;
-  }
-
-  .deactivate {
-    border-color: var(--color-danger);
-    color: var(--color-danger);
-    background: var(--color-surface);
   }
 </style>

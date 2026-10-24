@@ -2,6 +2,7 @@
   import { tick, untrack } from 'svelte';
   import TopBar from '../components/TopBar.svelte';
   import Icon from '../components/Icon.svelte';
+  import EmptyState from '../components/EmptyState.svelte';
   import StockBadge from '../components/StockBadge.svelte';
   import SetStockDialog from '../components/SetStockDialog.svelte';
   import { linkTo, replaceAddress, savedScrollPosition } from '../lib/router.svelte';
@@ -128,25 +129,25 @@
   {:else if products === null}
     <p class="muted center" aria-busy="true">Loading stock…</p>
   {:else if rows.length === 0}
-    <div class="card empty">
-      {#if counts.active === 0}
-        <Icon name="products" size={40} />
-        <h2>No products yet</h2>
-        <p class="muted">Add products to start tracking your stock.</p>
+    {#if counts.active === 0}
+      <EmptyState icon="products" title="No products yet" text="Add products to start tracking your stock.">
         <a class="btn btn-primary" href={`#${paths.productNew()}`} onclick={linkTo(paths.productNew())}>
           <Icon name="plus" /> Add product
         </a>
-      {:else}
-        <Icon name="check" size={40} />
-        <h2>{view === 'low' ? 'Nothing is running low' : 'Nothing is out of stock'}</h2>
-        <p class="muted">Good job keeping the shelves full.</p>
-      {/if}
-    </div>
+      </EmptyState>
+    {:else}
+      <EmptyState
+        icon="check"
+        tone="good"
+        title={view === 'low' ? 'Nothing is running low' : 'Nothing is out of stock'}
+        text="Good job keeping the shelves full."
+      />
+    {/if}
   {:else}
     {#if view !== 'all'}
-      <p class="muted note">Tap + after restocking, or Set to enter an exact count.</p>
+      <p class="muted note">Tap +1 after restocking, or Set to enter an exact count.</p>
     {/if}
-    <ul class="list card">
+    <ul class="list-card">
       {#each rows as product (product.id)}
         <li class="row">
           <a class="info" href={`#${paths.productDetail(product.id)}`} onclick={linkTo(paths.productDetail(product.id))}>
@@ -163,7 +164,7 @@
               <StockBadge {product} />
             {/if}
           </span>
-          <div class="actions">
+          <div class="actions" role="group" aria-label={`Stock for ${product.name}`}>
             <button
               type="button"
               class="btn btn-secondary"
@@ -209,7 +210,7 @@
   }
 
   .tab {
-    min-height: var(--touch-target);
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -225,15 +226,16 @@
   .tab.selected {
     background: var(--color-surface);
     color: var(--color-text);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+    box-shadow: var(--shadow-sm);
   }
 
   .tab-count {
-    min-width: 28px;
+    min-width: 26px;
     padding: 0 var(--space-2);
     border-radius: 999px;
     background: var(--color-bg);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
+    line-height: 20px;
   }
 
   .tab-low.selected .tab-count {
@@ -256,35 +258,9 @@
     margin: var(--space-1) 0 var(--space-3);
   }
 
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-6) var(--space-4);
-    text-align: center;
-    color: var(--color-text-muted);
-  }
-
-  .empty h2 {
-    color: var(--color-text);
-    font-size: var(--text-lg);
-  }
-
-  .empty p {
-    margin: 0 0 var(--space-2);
-  }
-
   .note {
     margin: 0;
     font-size: var(--text-sm);
-  }
-
-  .list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
   }
 
   .row {
@@ -294,14 +270,10 @@
     padding: var(--space-3) var(--space-4);
   }
 
-  .row + .row {
-    border-top: 1px solid var(--color-border);
-  }
-
   .info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
     min-width: 0;
     color: inherit;
     text-decoration: none;
@@ -309,6 +281,7 @@
 
   .name {
     font-weight: 700;
+    line-height: 1.3;
     overflow-wrap: anywhere;
   }
 
@@ -321,14 +294,29 @@
     text-align: right;
   }
 
+  /* −1 | +1 | Set… joined into one compact group. */
   .actions {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: var(--space-2);
+    grid-template-columns: 1fr 1fr 1.2fr;
   }
 
   .actions .btn {
-    font-size: var(--text-lg);
+    min-height: 44px;
+    border-radius: 0;
+    font-size: var(--text-md);
+    box-shadow: none;
+  }
+
+  .actions .btn:first-child {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+
+  .actions .btn + .btn {
+    margin-left: -1.5px;
+  }
+
+  .actions .btn:last-child {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
 </style>

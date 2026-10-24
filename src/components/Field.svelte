@@ -40,7 +40,8 @@
   }
 
   label {
-    font-weight: 600;
+    font-weight: 650;
+    font-size: var(--text-sm);
   }
 
   .required {
@@ -67,15 +68,20 @@
     width: 100%;
     min-height: var(--touch-target);
     padding: 0 var(--space-3);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-sm);
     background: var(--color-surface);
     font-size: var(--text-md);
   }
 
+  .field :global(input::placeholder) {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+  }
+
   .field :global(input:focus) {
     border-color: var(--color-primary);
-    outline: 2px solid var(--color-primary-soft);
+    outline: 3px solid var(--color-primary-soft);
     outline-offset: 0;
   }
 

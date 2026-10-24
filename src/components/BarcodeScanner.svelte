@@ -134,16 +134,25 @@
     const offsetX = (video.videoWidth * scale - view.width) / 2;
     const offsetY = (video.videoHeight * scale - view.height) / 2;
 
-    const sx = Math.max(0, (box.left - view.left + offsetX) / scale);
-    const sy = Math.max(0, (box.top - view.top + offsetY) / scale);
-    const sw = Math.min(video.videoWidth - sx, box.width / scale);
-    const sh = Math.min(video.videoHeight - sy, box.height / scale);
+    // Read a little beyond the box: barcode readers need the blank margin
+    // around the bars, which is cut off when a barcode fills the whole box.
+    const padX = box.width * 0.12;
+    const padY = box.height * 0.15;
+    const left = (box.left - padX - view.left + offsetX) / scale;
+    const top = (box.top - padY - view.top + offsetY) / scale;
+    // Whole pixels only: a fractional start blends neighbouring pixels and
+    // blurs thin barcode bars.
+    const sx = Math.max(0, Math.round(left));
+    const sy = Math.max(0, Math.round(top));
+    const sw = Math.round(Math.min(video.videoWidth - sx, (box.width + 2 * padX) / scale - (sx - left)));
+    const sh = Math.round(Math.min(video.videoHeight - sy, (box.height + 2 * padY) / scale - (sy - top)));
     if (sw < 10 || sh < 10) return null;
 
     // Smaller pictures are read faster; 960 px wide is plenty for a barcode.
     const shrink = Math.min(1, 960 / sw);
     canvas.width = Math.round(sw * shrink);
     canvas.height = Math.round(sh * shrink);
+    context.imageSmoothingEnabled = shrink < 1;
     context.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
     return context.getImageData(0, 0, canvas.width, canvas.height);
   }

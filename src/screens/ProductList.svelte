@@ -4,6 +4,8 @@
   import Icon from '../components/Icon.svelte';
   import ProductRow from '../components/ProductRow.svelte';
   import ScanOverlay from '../components/ScanOverlay.svelte';
+  import EmptyState from '../components/EmptyState.svelte';
+  import Sheet from '../components/Sheet.svelte';
   import { linkTo, replaceAddress, savedScrollPosition } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
@@ -11,6 +13,7 @@
   import type { PhotoImage } from '../lib/model/photo';
   import { describeError } from '../lib/db/errors';
   import type { Product } from '../lib/model/product';
+  import { summarizeStock } from '../lib/util/stock';
   import {
     DEFAULT_QUERY,
     SORT_LABELS,
@@ -28,9 +31,10 @@
   // The search starts from the address (so Back and Home's links work),
   // then lives here; every change is written back to the address.
   let query = $state<ProductQuery>(untrack(() => ({ ...initialQuery })));
-  let products = $state<Product[] | null>(null);
+  let products = $state.raw<Product[] | null>(null);
   let loadError = $state('');
   let scanning = $state(false);
+  let showFilters = $state(false);
   /** Small product pictures, by product id. */
   let thumbs = $state.raw<Map<number, PhotoImage>>(new Map());
 
@@ -66,6 +70,7 @@
   });
 
   const results = $derived(products ? filterProducts(products, query) : []);
+  const counts = $derived(summarizeStock(products ?? []));
   const categories = $derived.by(() => {
     const used = products ? categoriesInUse(products) : [];
     // Keep a category chosen earlier selectable even if no product uses it any more.
@@ -73,10 +78,27 @@
   });
   const inactiveCount = $derived(products?.filter((product) => !product.isActive).length ?? 0);
   const filtered = $derived(isFiltered(query));
+  /** How many settings inside the Filters sheet are changed from normal. */
+  const sheetFilterCount = $derived(
+    (query.category !== null ? 1 : 0) +
+      (query.sort !== 'name' ? 1 : 0) +
+      (query.showInactive ? 1 : 0) +
+      (query.stock === 'attention' ? 1 : 0),
+  );
   const errorMessage = $derived(storage.status === 'error' ? storage.errorMessage : loadError);
+
+  const chips: { stock: StockFilter; label: string; count: () => number }[] = [
+    { stock: 'all', label: 'All', count: () => counts.active },
+    { stock: 'low', label: 'Low', count: () => counts.low },
+    { stock: 'out', label: 'Out', count: () => counts.out },
+  ];
 
   function clearFilters() {
     query = { ...DEFAULT_QUERY, sort: query.sort, showInactive: query.showInactive };
+  }
+
+  function resetSheet() {
+    query = { ...query, category: null, stock: 'all', sort: 'name', showInactive: false };
   }
 </script>
 
@@ -92,14 +114,11 @@
   {:else if products === null}
     <p class="muted center" aria-busy="true">Loading products…</p>
   {:else if products.length === 0}
-    <div class="card empty">
-      <Icon name="products" size={40} />
-      <h2>No products yet</h2>
-      <p class="muted">Add your first product to start tracking your stock.</p>
+    <EmptyState icon="products" title="No products yet" text="Add your first product to start tracking your stock.">
       <a class="btn btn-primary" href={`#${paths.productNew()}`} onclick={linkTo(paths.productNew())}>
         <Icon name="plus" /> Add product
       </a>
-    </div>
+    </EmptyState>
   {:else}
     <div class="tools" role="search">
       <div class="search">
@@ -129,65 +148,54 @@
         </button>
       </div>
 
-      <div class="selects">
-        <label>
-          <span class="visually-hidden">Category</span>
-          <select bind:value={query.category} class:active={query.category !== null}>
-            <option value={null}>All categories</option>
-            {#each categories as category (category)}
-              <option value={category}>{category}</option>
-            {/each}
-          </select>
-        </label>
-        <label>
-          <span class="visually-hidden">Stock level</span>
-          <select bind:value={query.stock} class:active={query.stock !== 'all'}>
-            {#each Object.entries(STOCK_FILTER_LABELS) as [value, label] (value)}
-              <option value={value as StockFilter}>{label}</option>
-            {/each}
-          </select>
-        </label>
-        <label class="wide">
-          <span class="visually-hidden">Sort by</span>
-          <select bind:value={query.sort}>
-            {#each Object.entries(SORT_LABELS) as [value, label] (value)}
-              <option value={value as SortOrder}>Sort: {label}</option>
-            {/each}
-          </select>
-        </label>
+      <div class="chip-row">
+        <div class="chips" role="group" aria-label="Stock level">
+          {#each chips as chip (chip.stock)}
+            <button
+              type="button"
+              class="chip chip-{chip.stock}"
+              class:selected={query.stock === chip.stock}
+              aria-pressed={query.stock === chip.stock}
+              onclick={() => (query.stock = chip.stock)}
+            >
+              {chip.label} <span class="chip-count">{chip.count()}</span>
+            </button>
+          {/each}
+        </div>
+        <button
+          type="button"
+          class="chip filters"
+          class:selected={sheetFilterCount > 0}
+          onclick={() => (showFilters = true)}
+          aria-label={`Filters and sorting${sheetFilterCount ? `, ${sheetFilterCount} on` : ''}`}
+        >
+          <Icon name="settings" size={18} />
+          {#if sheetFilterCount > 0}<span class="chip-count">{sheetFilterCount}</span>{/if}
+        </button>
       </div>
-
-      {#if inactiveCount > 0}
-        <label class="toggle">
-          <input type="checkbox" bind:checked={query.showInactive} />
-          Show deactivated products ({inactiveCount})
-        </label>
-      {/if}
     </div>
 
     <div class="summary">
       <p class="muted count" role="status">
         {results.length}
         {results.length === 1 ? 'product' : 'products'}{filtered ? ' found' : ''}
+        {#if query.sort !== 'name'}<span> · {SORT_LABELS[query.sort]}</span>{/if}
       </p>
       {#if filtered}
-        <button type="button" class="link-button" onclick={clearFilters}>Clear search &amp; filters</button>
+        <button type="button" class="link-button" onclick={clearFilters}>Clear</button>
       {/if}
     </div>
 
     {#if results.length === 0}
-      <div class="card empty">
-        <Icon name="search" size={36} />
-        {#if query.text.trim()}
-          <h2>No products match “{query.text.trim()}”</h2>
-        {:else}
-          <h2>No products match these filters</h2>
-        {/if}
-        <p class="muted">Check the spelling, try part of the name, or clear the filters.</p>
+      <EmptyState
+        icon="search"
+        title={query.text.trim() ? `No products match “${query.text.trim()}”` : 'No products match these filters'}
+        text="Check the spelling, try part of the name, or clear the filters."
+      >
         <button type="button" class="btn btn-secondary" onclick={clearFilters}>Clear search &amp; filters</button>
-      </div>
+      </EmptyState>
     {:else}
-      <ul class="list card">
+      <ul class="list-card">
         {#each results as product (product.id)}
           <li><ProductRow {product} thumb={thumbs.get(product.id)} /></li>
         {/each}
@@ -197,6 +205,48 @@
   <!-- Room so the round + button never covers the last product. -->
   <div class="fab-space" aria-hidden="true"></div>
 </div>
+
+{#if showFilters}
+  <Sheet title="Filters & sorting" onClose={() => (showFilters = false)}>
+    <label class="sheet-field">
+      <span>Category</span>
+      <select bind:value={query.category}>
+        <option value={null}>All categories</option>
+        {#each categories as category (category)}
+          <option value={category}>{category}</option>
+        {/each}
+      </select>
+    </label>
+    <label class="sheet-field">
+      <span>Stock level</span>
+      <select bind:value={query.stock}>
+        {#each Object.entries(STOCK_FILTER_LABELS) as [value, label] (value)}
+          <option value={value as StockFilter}>{label}</option>
+        {/each}
+      </select>
+    </label>
+    <label class="sheet-field">
+      <span>Sort by</span>
+      <select bind:value={query.sort}>
+        {#each Object.entries(SORT_LABELS) as [value, label] (value)}
+          <option value={value as SortOrder}>{label}</option>
+        {/each}
+      </select>
+    </label>
+    {#if inactiveCount > 0}
+      <label class="toggle">
+        <input type="checkbox" bind:checked={query.showInactive} />
+        Show deactivated products ({inactiveCount})
+      </label>
+    {/if}
+    {#snippet footer()}
+      <button type="button" class="btn btn-secondary" onclick={resetSheet}>Reset</button>
+      <button type="button" class="btn btn-primary" onclick={() => (showFilters = false)}>
+        Show {results.length} {results.length === 1 ? 'product' : 'products'}
+      </button>
+    {/snippet}
+  </Sheet>
+{/if}
 
 {#if scanning}
   <ScanOverlay
@@ -228,30 +278,10 @@
     margin: var(--space-1) 0 var(--space-3);
   }
 
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-6) var(--space-4);
-    text-align: center;
-    color: var(--color-text-muted);
-  }
-
-  .empty h2 {
-    color: var(--color-text);
-    font-size: var(--text-lg);
-    overflow-wrap: anywhere;
-  }
-
-  .empty p {
-    margin: 0 0 var(--space-2);
-  }
-
   .tools {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
   }
 
   .search {
@@ -262,17 +292,18 @@
     width: 100%;
     min-height: 52px;
     padding: 0 calc(2 * var(--touch-target)) 0 44px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
     background: var(--color-surface);
     font-size: var(--text-md);
+    box-shadow: var(--shadow-sm);
     -webkit-appearance: none;
     appearance: none;
   }
 
   .search input:focus {
     border-color: var(--color-primary);
-    outline: 2px solid var(--color-primary-soft);
+    outline: 3px solid var(--color-primary-soft);
     outline-offset: 0;
   }
 
@@ -290,9 +321,9 @@
     display: grid;
   }
 
-  .search-scan {
+  .search-scan,
+  .clear {
     position: absolute;
-    right: 2px;
     top: 50%;
     transform: translateY(-50%);
     width: var(--touch-target);
@@ -302,65 +333,94 @@
     border: 0;
     border-radius: var(--radius-sm);
     background: transparent;
-    color: var(--color-primary);
     cursor: pointer;
+  }
+
+  .search-scan {
+    right: 2px;
+    color: var(--color-primary);
   }
 
   .clear {
-    position: absolute;
     right: calc(var(--touch-target) + 2px);
-    top: 50%;
-    transform: translateY(-50%);
-    width: var(--touch-target);
-    height: var(--touch-target);
-    display: grid;
-    place-items: center;
-    border: 0;
-    background: transparent;
     color: var(--color-text-muted);
-    cursor: pointer;
   }
 
-  .selects {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .chip-row {
+    display: flex;
     gap: var(--space-2);
   }
 
-  .selects .wide {
-    grid-column: 1 / -1;
-  }
-
-  select {
-    width: 100%;
-    min-height: var(--touch-target);
-    padding: 0 var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
-    /* 16px or more: smaller text makes iPhone zoom in when the box is tapped. */
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  select.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-soft);
-    color: var(--color-primary-strong);
-  }
-
-  .toggle {
+  .chips {
+    flex: 1;
     display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: var(--touch-target);
-    font-weight: 600;
+    gap: var(--space-2);
   }
 
-  .toggle input {
-    width: 22px;
-    height: 22px;
-    accent-color: var(--color-primary);
+  .chip {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .chip-count {
+    min-width: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--color-surface-sunken);
+    color: var(--color-text-on-grey);
+    font-size: var(--text-xs);
+    line-height: 20px;
+  }
+
+  .chip.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  .chip.selected .chip-count {
+    background: rgb(255 255 255 / 0.2);
+    color: var(--color-on-primary);
+  }
+
+  .chip-low:not(.selected) .chip-count {
+    background: var(--color-low-bg);
+    color: var(--color-low-text);
+  }
+
+  .chip-out:not(.selected) .chip-count {
+    background: var(--color-out-bg);
+    color: var(--color-out-text);
+  }
+
+  .filters {
+    flex: none;
+    width: auto;
+    min-width: 48px;
+  }
+
+  /* Small phones (e.g. 320 px wide): tighter chips so all of them fit. */
+  @media (max-width: 359px) {
+    .chips,
+    .chip-row {
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 0 var(--space-2);
+      gap: 4px;
+    }
   }
 
   .summary {
@@ -368,7 +428,8 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 32px;
+    min-height: 24px;
+    margin: calc(-1 * var(--space-2)) 0;
   }
 
   .count {
@@ -376,25 +437,37 @@
     font-size: var(--text-sm);
   }
 
-  .link-button {
+  .sheet-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-weight: 650;
+  }
+
+  .sheet-field select {
+    width: 100%;
     min-height: var(--touch-target);
-    border: 0;
-    background: transparent;
-    color: var(--color-primary);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    cursor: pointer;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    /* 16px or more: smaller text makes iPhone zoom in when the box is tapped. */
+    font-size: 1rem;
+    font-weight: 600;
   }
 
-  .list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch-target);
+    font-weight: 650;
   }
 
-  .list li + li {
-    border-top: 1px solid var(--color-border);
+  .toggle input {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--color-primary);
   }
 
   .fab-space {
@@ -414,5 +487,9 @@
     background: var(--color-primary);
     color: var(--color-on-primary);
     box-shadow: var(--shadow-raised);
+  }
+
+  .fab:active {
+    background: var(--color-primary-strong);
   }
 </style>

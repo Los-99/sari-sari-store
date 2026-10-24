@@ -75,12 +75,15 @@
 <TopBar title="Scan Barcode" />
 
 <div class="page">
-  <div class="camera" class:compact={result !== null}>
+  <!-- The result slides up over the bottom of the camera view, like a sheet. -->
+  <div class="stage">
+  <div class="camera">
     <BarcodeScanner paused={result !== null || typing} onDetected={lookUp} />
   </div>
 
   {#if result}
-    <section class="result card" aria-live="polite">
+    <section class="result" aria-live="polite">
+      <span class="handle" aria-hidden="true"></span>
       <p class="code"><span class="muted">Barcode</span> <strong>{result.code}</strong></p>
 
       {#if result.kind === 'looking'}
@@ -112,7 +115,8 @@
         </div>
         {#if product.isActive}
           <p class="stock">
-            {formatQuantity(product.stockQuantity, product.unit)} in stock <StockBadge {product} />
+            <span>Stock: {formatQuantity(product.stockQuantity, product.unit)}</span>
+            <StockBadge {product} />
           </p>
           <div class="actions three">
             <button type="button" class="btn btn-secondary" onclick={() => navigate(paths.productDetail(product.id))}>
@@ -133,11 +137,11 @@
         {/if}
       {/if}
     </section>
-  {:else}
-    <button type="button" class="btn btn-secondary manual" onclick={() => (typing = true)}>
-      <Icon name="keyboard" /> Enter barcode manually
-    </button>
   {/if}
+  </div>
+  <button type="button" class="btn btn-secondary manual" disabled={result !== null} onclick={() => (typing = true)}>
+    <Icon name="keyboard" /> Enter barcode manually
+  </button>
 </div>
 
 {#if typing}
@@ -164,18 +168,17 @@
     padding-bottom: var(--space-3);
   }
 
-  /* The camera fills most of the screen above the bottom navigation. */
+  .stage {
+    position: relative;
+  }
+
+  /* The camera fills the screen above the "Enter barcode manually" button. */
   .camera {
     height: calc(
       100dvh - var(--top-bar-height) - env(safe-area-inset-top) - var(--bottom-nav-height) -
-        env(safe-area-inset-bottom) - 160px
+        env(safe-area-inset-bottom) - 84px
     );
-    min-height: 300px;
-  }
-
-  .camera.compact {
-    height: 32dvh;
-    min-height: 200px;
+    min-height: 420px;
   }
 
   .manual {
@@ -183,14 +186,40 @@
   }
 
   .result {
-    margin: 0 var(--space-4);
+    position: absolute;
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: var(--space-2);
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    animation: slide-up 180ms ease-out;
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(24px);
+    }
+  }
+
+  .handle {
+    align-self: center;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
   }
 
   .result p {
     margin: 0;
+  }
+
+  .code {
+    font-size: var(--text-sm);
   }
 
   .code strong {
@@ -200,6 +229,7 @@
 
   .result h2 {
     font-size: var(--text-lg);
+    line-height: 1.25;
     overflow-wrap: anywhere;
   }
 
@@ -215,16 +245,20 @@
   }
 
   .price {
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
     font-weight: 800;
+    color: var(--color-primary);
     white-space: nowrap;
   }
 
   .stock {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
   }
 
   .problem {
@@ -240,5 +274,11 @@
 
   .actions.three {
     grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .actions.three .btn {
+    padding: 0 var(--space-2);
+    font-size: var(--text-sm);
+    line-height: 1.2;
   }
 </style>

@@ -16,8 +16,8 @@
   <span class="thumb"><PhotoView image={thumb} alt="" size={52} /></span>
   <span class="name">{product.name}</span>
   <span class="price">{formatPeso(product.sellingPriceCentavos)}</span>
-  <span class="meta">{product.category} · {product.unit}</span>
-  <span class="status">
+  <span class="meta-line">
+    <span class="meta">{product.category} · {product.unit}</span>
     {#if product.isActive}
       <StockBadge {product} />
     {:else}
@@ -30,13 +30,14 @@
   .row {
     display: grid;
     grid-template-columns: auto 1fr auto;
-    gap: var(--space-1) var(--space-3);
+    gap: 2px var(--space-3);
     align-items: center;
     padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
-    min-height: 64px;
+    min-height: 72px;
     color: inherit;
     text-decoration: none;
     background: var(--color-surface);
+    transition: background-color 120ms ease;
   }
 
   .row:active {
@@ -49,27 +50,35 @@
 
   .name {
     font-weight: 700;
+    line-height: 1.3;
     overflow-wrap: anywhere;
     align-self: end;
   }
 
   .price {
-    font-weight: 700;
+    font-weight: 750;
     text-align: right;
     white-space: nowrap;
     align-self: end;
   }
 
-  .meta {
-    color: var(--color-text-muted);
-    font-size: var(--text-sm);
-    overflow-wrap: anywhere;
+  /* Category and stock share the second line, so the name gets the full width. */
+  .meta-line {
+    grid-column: 2 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
     align-self: start;
   }
 
-  .status {
-    text-align: right;
-    align-self: start;
+  .meta {
+    min-width: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .inactive .name,

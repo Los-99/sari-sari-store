@@ -11,7 +11,7 @@
 {#if status === 'out'}
   <span class="badge badge-out"><Icon name="out" size={14} /> OUT</span>
 {:else if status === 'low'}
-  <span class="badge badge-low"><Icon name="alert" size={14} /> LOW · {product.stockQuantity}</span>
+  <span class="badge badge-low"><Icon name="alert" size={14} /> LOW · {product.stockQuantity} left</span>
 {:else}
-  <span class="badge badge-ok">Stock {product.stockQuantity.toLocaleString('en-PH')}</span>
+  <span class="badge badge-ok">{product.stockQuantity.toLocaleString('en-PH')} in stock</span>
 {/if}

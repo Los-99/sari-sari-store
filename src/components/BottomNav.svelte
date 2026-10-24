@@ -40,9 +40,12 @@
     right: 0;
     bottom: 0;
     z-index: 20;
-    background: var(--color-surface);
+    background: rgb(255 255 255 / 0.97);
     border-top: 1px solid var(--color-border);
+    box-shadow: 0 -2px 12px rgb(16 24 20 / 0.06);
     padding-bottom: env(safe-area-inset-bottom);
+    backdrop-filter: saturate(1.4) blur(8px);
+    -webkit-backdrop-filter: saturate(1.4) blur(8px);
   }
 
   ul {
@@ -70,6 +73,7 @@
 
   a.active {
     color: var(--color-primary);
+    font-weight: 800;
   }
 
   a.active .icon {

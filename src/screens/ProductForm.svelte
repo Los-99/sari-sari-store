@@ -242,6 +242,12 @@
 
   let formElement: HTMLFormElement | undefined = $state();
 
+  // Tell the app the Save bar is showing, so messages appear above it.
+  $effect(() => {
+    document.documentElement.style.setProperty('--action-bar-height', '84px');
+    return () => document.documentElement.style.removeProperty('--action-bar-height');
+  });
+
   // Listens to Return key presses coming from any box inside the form.
   $effect(() => {
     const form = formElement;
@@ -256,13 +262,7 @@
   }
 </script>
 
-<TopBar title={isEdit ? 'Edit Product' : 'Add Product'} backTo={backPath}>
-  {#snippet actions()}
-    {#if ready}
-      <button type="submit" form="product-form" class="btn top-save" disabled={saving}>Save</button>
-    {/if}
-  {/snippet}
-</TopBar>
+<TopBar title={isEdit ? 'Edit Product' : 'Add Product'} backTo={backPath} />
 
 <div class="content">
   {#if loadError || storage.status === 'error'}
@@ -281,6 +281,7 @@
     </div>
   {:else}
     <form id="product-form" bind:this={formElement} onsubmit={save} novalidate>
+      <h2 class="section-title">Photo</h2>
       <section class="card group" aria-label="Product photo">
         <PhotoPicker
           image={shownPhoto}
@@ -288,6 +289,7 @@
           onRemove={() => (photoChange = existingPhoto ? { kind: 'remove' } : { kind: 'keep' })}
         />
       </section>
+      <h2 class="section-title">Name &amp; barcode</h2>
       <section class="card group">
         <Field id="pf-name" label="Product name" required error={errors.name}>
           <input
@@ -337,6 +339,7 @@
         {/if}
       </section>
 
+      <h2 class="section-title">Category &amp; unit</h2>
       <section class="card group">
         <Field id="pf-category" label="Category" hint="Tap a suggestion or type your own." error={errors.category}>
           <input
@@ -378,6 +381,7 @@
         />
       </section>
 
+      <h2 class="section-title">Price</h2>
       <section class="card group">
         <div class="two-columns">
           <Field id="pf-cost" label="Cost price" required error={errors.cost}>
@@ -418,6 +422,7 @@
         {/if}
       </section>
 
+      <h2 class="section-title">Stock</h2>
       <section class="card group">
         <Field id="pf-stock" label="Stock quantity" required error={errors.stock}>
           <StepperInput
@@ -449,13 +454,18 @@
       {#if submitted && !checked.ok}
         <p class="form-error" role="alert">Please fix the fields marked in red.</p>
       {/if}
-
-      <button type="submit" class="btn btn-primary btn-large" disabled={saving}>
-        {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Save product'}
-      </button>
     </form>
   {/if}
 </div>
+
+{#if ready && !(isEdit && original === null)}
+  <!-- Always within thumb reach, just above the bottom navigation. -->
+  <div class="save-bar">
+    <button type="submit" form="product-form" class="btn btn-primary btn-large" disabled={saving}>
+      {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Save product'}
+    </button>
+  </div>
+{/if}
 
 {#if scanning}
   <ScanOverlay title="Scan product barcode" onResult={useScannedBarcode} onClose={() => (scanning = false)} />
@@ -474,10 +484,28 @@
     gap: var(--space-3);
   }
 
-  .top-save {
-    background: transparent;
-    color: var(--color-on-primary);
-    border-color: rgb(255 255 255 / 0.6);
+  .content {
+    /* Room so the fixed Save bar never covers the last field. */
+    padding-bottom: calc(var(--action-bar-height) + var(--space-4));
+  }
+
+  .save-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+    z-index: 18;
+    padding: var(--space-3) var(--space-4);
+    background: rgb(255 255 255 / 0.96);
+    border-top: 1px solid var(--color-border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .save-bar .btn {
+    display: flex;
+    max-width: calc(var(--content-max-width) - 2 * var(--space-4));
+    margin: 0 auto;
   }
 
   .error {
@@ -536,8 +564,17 @@
   }
 
   .profit {
+    align-self: flex-start;
     margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--color-ok-bg);
     color: var(--color-ok-text);
+    font-size: var(--text-sm);
+  }
+
+  .profit.loss {
+    background: var(--color-out-bg);
   }
 
   .profit.loss {

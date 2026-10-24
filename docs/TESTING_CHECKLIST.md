@@ -341,3 +341,46 @@ Then use **airplane mode**.
 
 Run `npm test`. New checks: the photo section of `src/lib/db/products.test.ts`,
 `src/lib/backup/format.test.ts` (version 2) and `src/lib/util/base64.test.ts`.
+
+## Phase 11: Design refresh (Version 1.2.0)
+
+Open the app with internet on, tap **Update**, and check **Settings → App version 1.2.0**.
+Nothing should behave differently; only the look changed. Use **airplane mode** for the rest.
+
+> Label changes in this version: stock labels now read **"24 in stock"**, **"LOW · 2 left"** and **"OUT"**.
+> Earlier sections of this checklist mention the old wording ("Stock 24", "LOW · 2").
+
+### Home
+
+- [ ] Green header with today's date and **Products / Low stock / Out** counts. Each count opens the matching list.
+- [ ] Big **Scan barcode** and **Add product** tiles work.
+- [ ] **Needs restocking** shows up to 3 products (out of stock first). **See all** opens Inventory.
+      With nothing low or out, it says **"Everything is well stocked"**.
+- [ ] With no products at all, a **Welcome** card explains how to start.
+
+### Products
+
+- [ ] The **All / Low / Out** chips filter the list, with counts on each chip.
+- [ ] The **⚙ Filters** button opens a panel from the bottom with **Category**, **Stock level** (including *Low or out*),
+      **Sort by** and **Show deactivated**. The button shows a number when any of these is changed.
+      **Reset** clears them; **Show N products** closes the panel. Back/Escape or tapping outside also closes it.
+- [ ] Search, the scan button in the search box, **Clear**, and Back-keeps-your-place still work as before.
+
+### Product details and form
+
+- [ ] Details: the photo (if any), then the name, then a price card (selling price, **Profit** pill, cost), the stock card with
+      −1 / +1 / Set…, and a **Details** list. **Edit** is at the top right.
+- [ ] Add/Edit: sections **Photo · Name & barcode · Category & unit · Price · Stock**, with one **Save** bar fixed above
+      the bottom navigation. Messages like "Product saved" appear above the Save bar, not behind it.
+- [ ] Return key, "Discard changes?", duplicate barcode warning and photo buttons still work.
+
+### Inventory, Scan, Settings
+
+- [ ] Inventory rows are more compact, with a joined **−1 | +1 | Set…** group.
+- [ ] Scan: after a scan, the result slides up **over the bottom of the camera**. **Enter barcode manually** sits below the camera.
+- [ ] **Scanning reliability:** barcodes that fill the whole white box now read reliably (this was improved in this version).
+- [ ] Settings is grouped into **Backup**, **Restore**, **Help** (rows that open with a ▾ arrow) and **App status**.
+
+### Small phones
+
+- [ ] On a small phone (or turning on large text), nothing is cut off. Buttons may wrap onto two lines, which is fine.

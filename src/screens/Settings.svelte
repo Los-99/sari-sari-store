@@ -1,6 +1,7 @@
 <script lang="ts">
   import TopBar from '../components/TopBar.svelte';
   import ExportBackupButton from '../components/ExportBackupButton.svelte';
+  import Icon from '../components/Icon.svelte';
   import RestorePanel from '../components/RestorePanel.svelte';
   import { pwa } from '../lib/pwa.svelte';
   import { storage } from '../lib/db/storage.svelte';
@@ -37,32 +38,38 @@
 <TopBar title="Settings" />
 
 <div class="content">
-  <h2 class="section-title">Backup &amp; restore</h2>
+  <h2 class="section-title">Backup</h2>
   <section class="card backup">
-    <p class="last-backup">
-      Last backup:
-      <strong class:never={backupStatus.lastBackupAt === null}>
-        {backupStatus.lastBackupAt === undefined
-          ? '…'
-          : backupStatus.lastBackupAt === null
-            ? 'Never on this phone'
-            : formatDateTime(backupStatus.lastBackupAt)}
-      </strong>
-    </p>
+    <div class="last-backup">
+      <span class="shield" class:never={backupStatus.lastBackupAt === null}><Icon name="shield" /></span>
+      <div>
+        <span class="muted small">Last backup</span>
+        <strong class:never={backupStatus.lastBackupAt === null}>
+          {backupStatus.lastBackupAt === undefined
+            ? '…'
+            : backupStatus.lastBackupAt === null
+              ? 'Never on this phone'
+              : formatDateTime(backupStatus.lastBackupAt)}
+        </strong>
+      </div>
+    </div>
     <p class="muted small">
-      A backup is one file with all your products. Keep it somewhere other than this app: the Files app,
-      Google Drive, or send it to another phone.
+      A backup is one file with all your products and photos. Keep it outside this app: the Files app, Google
+      Drive, or another phone.
     </p>
     <ExportBackupButton label="Back up now" showDownload />
-    <p class="muted small">
-      Backups include product photos, so they can be large. For a quick, small file (products only):
-    </p>
     <ExportBackupButton label="Back up without photos" primary={false} withPhotos={false} />
-    <hr />
+    <p class="muted small center">Without photos: a small file with products only.</p>
+  </section>
+
+  <h2 class="section-title">Restore</h2>
+  <section class="card backup">
     <RestorePanel />
   </section>
 
-  <details class="card guide">
+  <h2 class="section-title">Help</h2>
+  <div class="list-card help">
+  <details class="guide">
     <summary>How to move your products to a new phone</summary>
     <ol>
       <li>On the <strong>old phone</strong>: Settings → <strong>Back up now</strong>.</li>
@@ -77,7 +84,7 @@
     </ol>
   </details>
 
-  <details class="card guide">
+  <details class="guide">
     <summary>Keeping your products safe</summary>
     <ul>
       <li>Back up <strong>at least once a week</strong>, and after adding many products.</li>
@@ -89,9 +96,10 @@
       <li>Updating the app does <strong>not</strong> delete your products.</li>
     </ul>
   </details>
+  </div>
 
   <h2 class="section-title">App status</h2>
-  <dl class="card status">
+  <dl class="list-card status">
     <div>
       <dt>Opened from Home Screen</dt>
       <dd class:yes={openedFromHomeScreen}>{openedFromHomeScreen ? 'Yes' : 'No'}</dd>
@@ -135,6 +143,32 @@
     margin: 0;
   }
 
+  .last-backup {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .last-backup div {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .shield {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-ok-bg);
+    color: var(--color-ok-text);
+  }
+
+  .shield.never {
+    background: var(--color-low-bg);
+    color: var(--color-low-text);
+  }
+
   .last-backup strong.never {
     color: var(--color-low-text);
   }
@@ -143,23 +177,54 @@
     font-size: var(--text-sm);
   }
 
-  hr {
-    width: 100%;
-    margin: var(--space-1) 0;
-    border: 0;
+  .guide + .guide {
     border-top: 1px solid var(--color-border);
   }
 
+  .center {
+    text-align: center;
+  }
+
   .guide summary {
-    min-height: 32px;
-    font-weight: 700;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+    font-weight: 650;
     cursor: pointer;
+    list-style: none;
+  }
+
+  .guide summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* A chevron that turns when the row is opened. */
+  .guide summary::after {
+    content: '';
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--color-text-muted);
+    border-bottom: 2px solid var(--color-text-muted);
+    transform: rotate(45deg);
+    transition: transform 150ms ease;
+  }
+
+  .guide[open] summary {
+    color: var(--color-primary);
+  }
+
+  .guide[open] summary::after {
+    transform: rotate(225deg);
   }
 
   .guide ol,
   .guide ul {
-    margin: var(--space-3) 0 0;
-    padding-left: var(--space-5);
+    margin: 0;
+    padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + var(--space-5));
   }
 
   .guide li + li {

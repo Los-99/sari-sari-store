@@ -93,7 +93,13 @@
   .actions .btn {
     justify-content: flex-start;
     padding: 0 var(--space-3);
-    white-space: nowrap;
+    text-align: left;
+    line-height: 1.2;
+  }
+
+  /* Keep icons full size even when the label is long. */
+  .actions .btn :global(svg) {
+    flex: none;
   }
 
   .link-button {
