@@ -6,7 +6,9 @@
   import { linkTo, navigate } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
-  import { adjustStock, getProduct, productChanges, setProductActive } from '../lib/db/products';
+  import PhotoView from '../components/PhotoView.svelte';
+  import { adjustStock, getPhoto, getProduct, productChanges, setProductActive } from '../lib/db/products';
+  import type { StoredPhoto } from '../lib/db/database';
   import { describeError } from '../lib/db/errors';
   import { confirmDialog } from '../lib/dialog.svelte';
   import { showToast } from '../lib/toast.svelte';
@@ -21,9 +23,14 @@
   let loadError = $state('');
   let settingStock = $state(false);
 
+  /** The product's photo; replaced only when the photo itself changes (not on every stock tap). */
+  let photo = $state.raw<StoredPhoto | null>(null);
+
   async function load() {
     try {
-      product = (await getProduct(productId)) ?? null;
+      const [found, stored] = await Promise.all([getProduct(productId), getPhoto(productId)]);
+      product = found ?? null;
+      if (stored?.updatedAt !== photo?.updatedAt) photo = stored ?? null;
       loadError = '';
     } catch (error) {
       loadError = describeError(error);
@@ -116,6 +123,9 @@
     {/if}
 
     <section class="card">
+      {#if photo}
+        <div class="photo"><PhotoView image={photo.image} alt={`Photo of ${product.name}`} size="fill" fit="contain" /></div>
+      {/if}
       <h2 class="name">{product.name}</h2>
       <div class="prices">
         <div>
@@ -203,6 +213,10 @@
 
   .inactive p {
     margin: 0 0 var(--space-3);
+  }
+
+  .photo {
+    margin-bottom: var(--space-3);
   }
 
   .name {

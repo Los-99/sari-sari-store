@@ -14,9 +14,13 @@ import {
   createProduct,
   findProductByBarcode,
   findProductsWithSameName,
+  getPhoto,
+  getPhotoThumb,
   getProduct,
   getRestoreSafetyCopy,
   listCategories,
+  listPhotos,
+  listPhotoThumbs,
   listProducts,
   replaceAllProducts,
   setProductActive,
@@ -218,6 +222,54 @@ describe('restore and undo', () => {
     await replaceAllProducts([{ ...fields(), id: 50, createdAt: 0, updatedAt: 0 }]);
     const added = await createProduct(fields({ name: 'New', barcode: undefined }));
     expect(added.id).toBeGreaterThan(50);
+  });
+});
+
+describe('photos', () => {
+  const picture = (n: number) => ({ type: 'image/jpeg', width: 10, height: 10, data: new Uint8Array([n, n, n]).buffer });
+  const setPhoto = (n: number) => ({ kind: 'set' as const, full: picture(n), thumb: picture(n + 100) });
+
+  it('saves a photo together with a new product', async () => {
+    const saved = await createProduct(fields(), setPhoto(1));
+    expect(new Uint8Array((await getPhoto(saved.id))!.image.data)).toEqual(new Uint8Array([1, 1, 1]));
+    expect((await listPhotoThumbs()).has(saved.id)).toBe(true);
+  });
+
+  it('keeps, replaces and removes the photo when editing', async () => {
+    const saved = await createProduct(fields(), setPhoto(1));
+    await updateProduct(saved.id, fields({ name: 'Renamed' }));
+    expect(await getPhoto(saved.id)).toBeDefined();
+    await updateProduct(saved.id, fields(), setPhoto(2));
+    expect(new Uint8Array((await getPhoto(saved.id))!.image.data)[0]).toBe(2);
+    await updateProduct(saved.id, fields(), { kind: 'remove' });
+    expect(await getPhoto(saved.id)).toBeUndefined();
+    expect(await getPhotoThumb(saved.id)).toBeUndefined();
+  });
+
+  it('saves no photo if the product itself is refused', async () => {
+    await createProduct(fields());
+    await expect(createProduct(fields({ name: 'Copy' }), setPhoto(3))).rejects.toBeInstanceOf(DuplicateBarcodeError);
+    expect(await listPhotos()).toHaveLength(0);
+  });
+
+  it('restore replaces photos too, and undo brings them back', async () => {
+    const before = await createProduct(fields(), setPhoto(1));
+    const restoredPhoto = { productId: 60, full: picture(9), thumb: picture(19), updatedAt: 5 };
+    await replaceAllProducts([{ ...fields({ barcode: '600' }), id: 60, createdAt: 0, updatedAt: 0 }], [restoredPhoto]);
+    expect(await getPhoto(before.id)).toBeUndefined();
+    expect(new Uint8Array((await getPhoto(60))!.image.data)[0]).toBe(9);
+
+    await undoLastRestore();
+    expect(new Uint8Array((await getPhoto(before.id))!.image.data)[0]).toBe(1);
+    expect(await getPhoto(60)).toBeUndefined();
+  });
+
+  it('restoring a backup without photos removes the old photos (undo brings them back)', async () => {
+    const before = await createProduct(fields(), setPhoto(1));
+    await replaceAllProducts([{ ...fields(), id: before.id, createdAt: 0, updatedAt: 0 }]);
+    expect(await listPhotos()).toHaveLength(0);
+    await undoLastRestore();
+    expect(await listPhotos()).toHaveLength(1);
   });
 });
 

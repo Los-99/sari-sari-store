@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Product } from '../model/product';
+import type { PhotoImage } from '../model/photo';
 
 /**
  * The app's database lives inside the phone's browser (IndexedDB).
@@ -9,13 +10,30 @@ import type { Product } from '../model/product';
  * an existing step: phones that already ran it would not run it again.
  */
 export const DB_NAME = 'sari-sari-store';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
+
+/** One stored picture of a product (full size or thumbnail). */
+export interface StoredPhoto {
+  productId: number;
+  image: PhotoImage;
+  updatedAt: number;
+}
 
 export interface StoreSchema extends DBSchema {
   products: {
     key: number;
     value: Product;
     indexes: { barcode: string };
+  };
+  /** Full-size product photos (version 2). Key: product id. */
+  photos: {
+    key: number;
+    value: StoredPhoto;
+  };
+  /** Small square photos for lists (version 2). Key: product id. */
+  photoThumbs: {
+    key: number;
+    value: StoredPhoto;
   };
   /** Small app settings and facts, e.g. when the last backup was made. */
   meta: {
@@ -37,6 +55,11 @@ export function getDb(): Promise<StoreDatabase> {
         // barcode are simply left out of this index.
         products.createIndex('barcode', 'barcode', { unique: true });
         db.createObjectStore('meta');
+      }
+      if (oldVersion < 2) {
+        // Product photos. Only adds new stores; existing products are untouched.
+        db.createObjectStore('photos', { keyPath: 'productId' });
+        db.createObjectStore('photoThumbs', { keyPath: 'productId' });
       }
     },
     blocking() {

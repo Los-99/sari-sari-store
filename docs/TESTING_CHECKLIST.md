@@ -302,3 +302,42 @@ plus the refinements made in Phase 8. Use **airplane mode** throughout.
 - [ ] **Edit** its price and **deactivate** it, then reactivate it.
 - [ ] **Back up**, restore from that file, then **Undo last restore**.
 - [ ] Close the app completely, restart the phone and reopen it. Everything is still there.
+
+## Phase 10: Product photos (Version 1.1.0)
+
+Open the app with internet on, tap **Update** when asked, and check **Settings → App version 1.1.0**.
+Then use **airplane mode**.
+
+### Your existing products survive the update
+
+- [ ] All products from before the update are still there, with their stock and prices. They show a grey box icon (no photo yet).
+
+### Adding and changing photos
+
+- [ ] **Add Product → Take photo** opens the back camera. Take a picture. A preview appears in the form.
+- [ ] **Choose photo** picks a picture from the gallery instead.
+- [ ] Save. The photo shows **large** on the product's details screen, **small** in the Products list,
+      and next to the name when you **scan** its barcode.
+- [ ] **Edit → Retake photo / Choose photo** replaces it. **Remove photo** removes it after saving.
+- [ ] Changing only the photo, then pressing **←**, asks **"Discard changes?"**.
+- [ ] A product saved **without** a photo works exactly as before.
+- [ ] A sideways phone photo appears the right way up.
+- [ ] Tapping **+1 / −1** on the details screen doesn't make the photo flicker.
+
+### Backups with photos
+
+- [ ] **Back up now** works. The file is larger than before (about 0.1–0.2 MB per photo).
+- [ ] **Back up without photos** makes a small file whose name ends in `-no-photos`.
+- [ ] Restore the **with-photos** backup: the preview shows **Photos in backup: N**, and after restoring the photos are back.
+- [ ] Restore the **no-photos** backup: the preview warns that photos on the phone will be removed.
+      After restoring, **Undo last restore** brings the photos back.
+- [ ] A backup made with app 1.0 (before photos) still restores.
+
+### Storage
+
+- [ ] After adding photos, close the app fully and reopen it in airplane mode. Photos are still there.
+
+### Automatic checks (on your PC)
+
+Run `npm test`. New checks: the photo section of `src/lib/db/products.test.ts`,
+`src/lib/backup/format.test.ts` (version 2) and `src/lib/util/base64.test.ts`.

@@ -1,4 +1,7 @@
-# Data Model (database version 1)
+# Data Model (database version 2)
+
+Version 2 (app 1.1) added the `photos` and `photoThumbs` stores. Phones upgrading
+from version 1 keep all their products; the upgrade only adds the new stores.
 
 The app keeps its data in the phone browser's built-in database (IndexedDB),
 in a database named `sari-sari-store`. Nothing is sent to the internet.
@@ -27,6 +30,20 @@ One record per product. The key is `id`, assigned automatically and never reused
 - **Low stock**: `stockQuantity` is above 0 and at or below `lowStockThreshold` (when the threshold is above 0)
 - **In stock**: everything else
 
+## `photos` and `photoThumbs`
+
+Each product has **at most one photo**, stored in two sizes so lists stay fast. The key for both is the product's `id`.
+
+| Field | Meaning |
+|---|---|
+| `productId` | The product the photo belongs to |
+| `image.type` | `image/jpeg` (photos are converted on the phone) |
+| `image.data` | The picture's bytes (`ArrayBuffer`) |
+| `image.width`, `image.height` | Size in pixels. Full size is about 800 px on the longest side; thumbnails are 160 × 160 squares. |
+| `updatedAt` | When the photo was last changed |
+
+A product and its photo are always saved in the **same transaction**.
+
 ## `meta`
 
 Small key–value facts about the app.
@@ -34,7 +51,7 @@ Small key–value facts about the app.
 | Key | Meaning |
 |---|---|
 | `lastBackupAt` | When a backup was last exported on this phone (`Date.now()` value) |
-| `restoreSafetyCopy` | `{ savedAt, products }`: the products as they were just before the last restore, for **Undo last restore**. Removed after undo. |
+| `restoreSafetyCopy` | `{ savedAt, products, photos }`: the products and photos as they were just before the last restore, for **Undo last restore**. Removed after undo. |
 
 Phase 3 test builds also wrote `firstOpenedAt` and `openCount` here; they are
 no longer used and are harmless.

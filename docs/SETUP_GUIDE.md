@@ -1,7 +1,7 @@
 # Sari-Sari Store: Setup and Handover Guide
 
 This guide explains everything needed to **use**, **update** and **look after** the Sari-Sari Store app
-(Version 1.0.0). It's written for beginners. Technical words are explained the first time they appear.
+(Version 1.1.0, with product photos). It's written for beginners. Technical words are explained the first time they appear.
 
 > **Most important point first:** using the app every day needs **no account, no internet and no
 > installation from an app store**. You open a web link once, add it to your phone's Home Screen,
@@ -132,7 +132,7 @@ isn't shown publicly.
 |---|---|
 | `npm run dev` | Live preview at http://localhost:5173. It refreshes as you change code. `Ctrl+C` stops it. |
 | `npm run check` | Checks the code for mistakes |
-| `npm test` | Runs the 101 automatic checks. They should all pass. |
+| `npm test` | Runs the 113 automatic checks. They should all pass. |
 | `npm run build` | Builds the finished app into the `dist` folder |
 | `npm run preview` | Serves the built app at http://localhost:4173, including offline mode |
 
@@ -163,7 +163,7 @@ There's **no USB cable, USB debugging or developer mode** needed. The phone simp
 - Opened from Home Screen: **Yes**
 - Works offline: **Yes**. If it says "Not yet", close the app fully and open it again once.
 - Database: **Ready**
-- App version: **1.0.0**
+- App version: **1.1.0** (or newer)
 
 ### C4. Allowing the camera
 
@@ -243,7 +243,7 @@ That includes the scanning engine (about 1 MB). There are no maps, models or dat
 | | Check |
 |---|---|
 | ☐ | The app opens, and Home shows your counts |
-| ☐ | **Add** a product, **view** it, **edit** its price, **deactivate** and reactivate it |
+| ☐ | **Add** a product **with a photo**, **view** it, **edit** its price, **deactivate** and reactivate it |
 | ☐ | **Search** by name and barcode; **filter** by category and Low / Out of stock; **sort** |
 | ☐ | **Scan** a product barcode with the camera |
 | ☐ | Fully close the app, reopen it: everything is still there. Restart the phone: still there. |
@@ -267,12 +267,17 @@ Google Drive, email or Messenger.
 2. **iPhone:** the Share sheet opens → **Save to Files** → choose a folder (e.g. *On My iPhone* or *iCloud Drive*) → **Save**.
    **Android:** choose Google Drive, Files or Messenger, or tap **Or save it with the browser's download instead** to save it to **Downloads**.
 3. The file is named like `sarisari-backup-2026-10-24-1430.json` (date and time).
+4. **Photos are included**, so the file can be large: roughly 0.1–0.2 MB per photographed product,
+   e.g. about 50–100 MB for 500 products with photos. For a quick, small file with products only, use
+   **Settings → Back up without photos** (its name ends in `-no-photos`). Restoring that file removes photos from the phone.
 
 ### F2. Where to keep backups
 
 - Keep **two copies in different places**, e.g. the Files app **and** Google Drive, email it to yourself, or keep it on your PC.
 - **Not** only on the same phone: if the phone is lost, that copy is lost too.
 - Back up **at least weekly** and after adding many products. Home turns orange after 7 days without a backup.
+- **Large backups (with many photos):** Google Drive, the Files app or a USB cable handle big files best.
+  Some messaging apps refuse large files.
 
 ### F3. Moving to another phone, or reinstalling
 
@@ -366,7 +371,10 @@ The file format is documented in [BACKUP_FORMAT.md](BACKUP_FORMAT.md).
 | **Products missing on a new phone** | Data doesn't move by itself. Back up the old phone and restore on the new one (F3). |
 | **Backup won't restore** | See section F5. The message explains why. Nothing is changed when a file is refused. |
 | **"Protected from automatic clearing: No"** | The phone may clear website data when storage is very low. Keep free storage and **back up weekly**. |
-| **"The phone's storage is full"** when saving | Free some space (photos, videos, unused apps), then try again. |
+| **"The phone's storage is full"** when saving | Free some space (photos, videos, unused apps), then try again. Product photos take space too: each is about 0.1 MB. |
+| **"This picture couldn't be opened"** when adding a photo | Some formats (e.g. HEIC pictures copied from an iPhone to an Android phone) can't be read. Use **Take photo**, or choose a JPEG/PNG picture. |
+| **Backup file is too big to send** | Send it via Google Drive or a USB cable, or use **Back up without photos** (small, but restoring it removes photos). |
+| **"Take photo" opens the gallery instead of the camera** (some phones) | Normal on some phones. Pick the camera option in the menu that appears. |
 
 ---
 

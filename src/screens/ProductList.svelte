@@ -7,7 +7,8 @@
   import { linkTo, replaceAddress, savedScrollPosition } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
-  import { listProducts, productChanges } from '../lib/db/products';
+  import { listPhotoThumbs, listProducts, productChanges } from '../lib/db/products';
+  import type { PhotoImage } from '../lib/model/photo';
   import { describeError } from '../lib/db/errors';
   import type { Product } from '../lib/model/product';
   import {
@@ -30,11 +31,15 @@
   let products = $state<Product[] | null>(null);
   let loadError = $state('');
   let scanning = $state(false);
+  /** Small product pictures, by product id. */
+  let thumbs = $state.raw<Map<number, PhotoImage>>(new Map());
 
   async function load() {
     try {
       const first = products === null;
-      products = await listProducts();
+      const [all, pictures] = await Promise.all([listProducts(), listPhotoThumbs()]);
+      thumbs = pictures;
+      products = all;
       loadError = '';
       if (first) {
         const scrollY = savedScrollPosition();
@@ -184,7 +189,7 @@
     {:else}
       <ul class="list card">
         {#each results as product (product.id)}
-          <li><ProductRow {product} /></li>
+          <li><ProductRow {product} thumb={thumbs.get(product.id)} /></li>
         {/each}
       </ul>
     {/if}

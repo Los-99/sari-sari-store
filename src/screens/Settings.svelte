@@ -54,6 +54,10 @@
       Google Drive, or send it to another phone.
     </p>
     <ExportBackupButton label="Back up now" showDownload />
+    <p class="muted small">
+      Backups include product photos, so they can be large. For a quick, small file (products only):
+    </p>
+    <ExportBackupButton label="Back up without photos" primary={false} withPhotos={false} />
     <hr />
     <RestorePanel />
   </section>

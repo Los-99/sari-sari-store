@@ -8,7 +8,9 @@
   import { navigate } from '../lib/router.svelte';
   import { paths } from '../lib/routes';
   import { storage } from '../lib/db/storage.svelte';
-  import { findProductByBarcode, productChanges, setProductActive } from '../lib/db/products';
+  import PhotoView from '../components/PhotoView.svelte';
+  import { findProductByBarcode, getPhotoThumb, productChanges, setProductActive } from '../lib/db/products';
+  import type { PhotoImage } from '../lib/model/photo';
   import { describeError } from '../lib/db/errors';
   import { showToast } from '../lib/toast.svelte';
   import type { Product } from '../lib/model/product';
@@ -22,7 +24,7 @@
    */
   type Result =
     | { kind: 'looking'; code: string }
-    | { kind: 'found'; code: string; product: Product }
+    | { kind: 'found'; code: string; product: Product; thumb?: PhotoImage }
     | { kind: 'unknown'; code: string }
     | { kind: 'error'; code: string; message: string };
 
@@ -38,9 +40,10 @@
     }
     try {
       const product = await findProductByBarcode(code);
+      const thumb = product ? (await getPhotoThumb(product.id))?.image : undefined;
       // Ignore the answer if the user already moved on.
       if (result?.code !== code) return;
-      result = product ? { kind: 'found', code, product } : { kind: 'unknown', code };
+      result = product ? { kind: 'found', code, product, thumb } : { kind: 'unknown', code };
     } catch (error) {
       result = { kind: 'error', code, message: describeError(error) };
     }
@@ -103,6 +106,7 @@
       {:else}
         {@const product = result.product}
         <div class="product">
+          <PhotoView image={result.thumb} alt={`Photo of ${product.name}`} size={64} />
           <h2>{product.name}</h2>
           <span class="price">{formatPeso(product.sellingPriceCentavos)}</span>
         </div>
@@ -201,9 +205,13 @@
 
   .product {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    align-items: center;
     gap: var(--space-3);
+  }
+
+  .product h2 {
+    flex: 1;
+    min-width: 0;
   }
 
   .price {

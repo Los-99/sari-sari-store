@@ -1,9 +1,9 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import ExportBackupButton from './ExportBackupButton.svelte';
-  import { backupStatus, readBackupFile, restoreProducts, undoRestore } from '../lib/backup/backup.svelte';
+  import { backupStatus, readBackupFile, restoreBackup, undoRestore } from '../lib/backup/backup.svelte';
   import type { CheckedBackup } from '../lib/backup/format';
-  import { listProducts } from '../lib/db/products';
+  import { listPhotoThumbs, listProducts } from '../lib/db/products';
   import { describeError } from '../lib/db/errors';
   import { confirmDialog } from '../lib/dialog.svelte';
   import { showToast } from '../lib/toast.svelte';
@@ -25,6 +25,7 @@
         fileName: string;
         backup: CheckedBackup;
         currentCount: number;
+        currentPhotoCount: number;
         /** True when the phone has changes newer than the backup. */
         backupIsOlder: boolean;
       }
@@ -49,12 +50,14 @@
     }
     try {
       const current = await listProducts();
+      const currentPhotoCount = (await listPhotoThumbs()).size;
       const newestChange = Math.max(0, ...current.map((product) => product.updatedAt));
       step = {
         kind: 'preview',
         fileName: file.name,
         backup: result.backup,
         currentCount: current.length,
+        currentPhotoCount,
         backupIsOlder: newestChange > result.backup.exportedAt.getTime(),
       };
     } catch (error) {
@@ -77,7 +80,7 @@
 
     step = { kind: 'restoring' };
     try {
-      await restoreProducts(backup.products);
+      await restoreBackup(backup);
       showToast(`Restored ${backup.products.length} ${backup.products.length === 1 ? 'product' : 'products'}.`);
       step = { kind: 'idle' };
     } catch (error) {
@@ -151,7 +154,14 @@
         <dt>Products in backup</dt>
         <dd>{step.backup.products.length} ({activeCount} active)</dd>
       </div>
-      <div><dt>Products on this phone now</dt><dd>{step.currentCount}</dd></div>
+      <div>
+        <dt>Photos in backup</dt>
+        <dd>{step.backup.includesPhotos ? step.backup.photos.length : 'Not included'}</dd>
+      </div>
+      <div>
+        <dt>On this phone now</dt>
+        <dd>{step.currentCount} products, {step.currentPhotoCount} photos</dd>
+      </div>
     </dl>
 
     <p class="warning">
@@ -166,6 +176,15 @@
         <span>
           This backup is <strong>older</strong> than your latest changes. Changes made after
           {formatDateTime(step.backup.exportedAt.getTime())} will be lost.
+        </span>
+      </p>
+    {/if}
+    {#if !step.backup.includesPhotos && step.currentPhotoCount > 0}
+      <p class="warning">
+        <Icon name="alert" size={18} />
+        <span>
+          This backup has <strong>no photos</strong>. The {step.currentPhotoCount}
+          {step.currentPhotoCount === 1 ? 'photo' : 'photos'} on this phone will be removed.
         </span>
       </p>
     {/if}

@@ -1,7 +1,14 @@
 import { getMeta, setMeta } from '../db/database';
-import { getRestoreSafetyCopy, listProducts, replaceAllProducts, undoLastRestore } from '../db/products';
-import type { Product } from '../model/product';
-import { MAX_BACKUP_BYTES, backupFileName, backupToText, buildBackup, checkBackup, type BackupCheck } from './format';
+import { getRestoreSafetyCopy, listPhotos, listProducts, replaceAllProducts, undoLastRestore } from '../db/products';
+import {
+  MAX_BACKUP_BYTES,
+  backupFileName,
+  backupToParts,
+  buildBackup,
+  checkBackup,
+  type BackupCheck,
+  type CheckedBackup,
+} from './format';
 
 const LAST_BACKUP_KEY = 'lastBackupAt';
 
@@ -24,12 +31,13 @@ export async function loadBackupStatus() {
   }
 }
 
-/** Builds the backup file from every product (active and deactivated). */
-export async function createBackupFile(): Promise<File> {
+/** Builds the backup file from every product (active and deactivated), with or without photos. */
+export async function createBackupFile(withPhotos = true): Promise<File> {
   const now = new Date();
   const products = await listProducts();
-  const text = backupToText(buildBackup(products, __APP_VERSION__, now));
-  return new File([text], backupFileName(now), { type: 'application/json' });
+  const photos = withPhotos ? await listPhotos() : null;
+  const parts = backupToParts(buildBackup(products, photos, __APP_VERSION__, now));
+  return new File(parts, backupFileName(now, withPhotos), { type: 'application/json' });
 }
 
 export type ExportOutcome = 'shared' | 'downloaded' | 'cancelled' | 'needs-tap';
@@ -79,7 +87,10 @@ async function markBackedUp() {
 /** Reads and checks a chosen backup file. Nothing is changed by this. */
 export async function readBackupFile(file: File): Promise<BackupCheck> {
   if (file.size > MAX_BACKUP_BYTES) {
-    return { ok: false, error: 'This file is too large to be a Sari-Sari Store backup.' };
+    return {
+      ok: false,
+      error: 'This file is too large for this phone to restore. Try a backup made with "Back up without photos".',
+    };
   }
   if (file.size === 0) {
     return { ok: false, error: 'This file is empty. It may not have been copied completely.' };
@@ -91,8 +102,8 @@ export async function readBackupFile(file: File): Promise<BackupCheck> {
   }
 }
 
-export async function restoreProducts(products: readonly Product[]) {
-  await replaceAllProducts(products);
+export async function restoreBackup(backup: CheckedBackup) {
+  await replaceAllProducts(backup.products, backup.photos);
   await loadBackupStatus();
 }
 

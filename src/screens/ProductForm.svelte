@@ -13,6 +13,7 @@
     createProduct,
     findProductByBarcode,
     findProductsWithSameName,
+    getPhoto,
     getProduct,
     listCategories,
     updateProduct,
@@ -21,6 +22,8 @@
   import { confirmDialog } from '../lib/dialog.svelte';
   import { showToast } from '../lib/toast.svelte';
   import { LIMITS, SUGGESTED_CATEGORIES, SUGGESTED_UNITS, type Product } from '../lib/model/product';
+  import type { PhotoChange, PhotoImage } from '../lib/model/photo';
+  import PhotoPicker from '../components/PhotoPicker.svelte';
   import {
     FORM_ORDER,
     emptyForm,
@@ -59,6 +62,14 @@
   let values = $state<ProductFormValues>(emptyForm(barcode));
   let categories = $state<string[]>([...SUGGESTED_CATEGORIES]);
 
+  // Photo: the saved one (edit mode) and what to do with it on Save.
+  // $state.raw keeps these plain objects, which the database can store.
+  let existingPhoto = $state.raw<PhotoImage | null>(null);
+  let photoChange = $state.raw<PhotoChange>({ kind: 'keep' });
+  const shownPhoto = $derived(
+    photoChange.kind === 'set' ? photoChange.full : photoChange.kind === 'remove' ? null : existingPhoto,
+  );
+
   /** Errors are shown only after the first Save attempt, then update as you type. */
   let submitted = $state(false);
   let saving = $state(false);
@@ -66,7 +77,7 @@
   let conflict = $state<{ barcode: string; owner?: Product } | null>(null);
 
   const ready = $derived(!isEdit || Boolean(original));
-  const dirty = $derived(ready && !formsEqual(values, initial));
+  const dirty = $derived(ready && (!formsEqual(values, initial) || photoChange.kind !== 'keep'));
   const checked = $derived(readForm(values, original?.isActive ?? true));
   const errors = $derived.by((): FormErrors => {
     const shown: FormErrors = submitted && !checked.ok ? { ...checked.errors } : {};
@@ -89,11 +100,12 @@
     void (async () => {
       try {
         if (productId !== undefined) {
-          const product = (await getProduct(productId)) ?? null;
-          original = product;
+          const [product, photo] = await Promise.all([getProduct(productId), getPhoto(productId)]);
+          original = product ?? null;
           if (product) {
             initial = formFromProduct(product);
             values = formFromProduct(product);
+            existingPhoto = photo?.image ?? null;
           }
         }
         categories = await listCategories();
@@ -176,11 +188,11 @@
       }
 
       if (productId === undefined) {
-        const created = await createProduct(fields);
+        const created = await createProduct(fields, photoChange);
         showToast('Product saved.');
         await navigate(paths.productDetail(created.id), { replace: true, force: true });
       } else {
-        await updateProduct(productId, fields);
+        await updateProduct(productId, fields, photoChange);
         showToast('Changes saved.');
         await goBack(paths.productDetail(productId), { force: true });
       }
@@ -269,6 +281,13 @@
     </div>
   {:else}
     <form id="product-form" bind:this={formElement} onsubmit={save} novalidate>
+      <section class="card group" aria-label="Product photo">
+        <PhotoPicker
+          image={shownPhoto}
+          onPicked={(photo) => (photoChange = { kind: 'set', ...photo })}
+          onRemove={() => (photoChange = existingPhoto ? { kind: 'remove' } : { kind: 'keep' })}
+        />
+      </section>
       <section class="card group">
         <Field id="pf-name" label="Product name" required error={errors.name}>
           <input

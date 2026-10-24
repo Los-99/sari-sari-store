@@ -8,11 +8,14 @@
     label = 'Back up now',
     primary = true,
     showDownload = false,
+    withPhotos = true,
   }: {
     label?: string;
     primary?: boolean;
     /** Also offer "Save as a file" (browser download) as a second option. */
     showDownload?: boolean;
+    /** false = "Back up without photos": a much smaller file. */
+    withPhotos?: boolean;
   } = $props();
 
   let busy = $state(false);
@@ -23,7 +26,7 @@
     if (busy) return;
     busy = true;
     try {
-      const backup = file ?? (await createBackupFile());
+      const backup = file ?? (await createBackupFile(withPhotos));
       if (action === 'download') {
         await downloadBackupFile(backup);
         showToast(`Backup saved as ${backup.name} (check Downloads / Files).`);
